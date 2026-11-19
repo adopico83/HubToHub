@@ -67,15 +67,15 @@ const TABS = [
   ['actividad', '#/actividad', 'Actividad', ICON.actividad],
   ['ajustes', '#/ajustes', 'Ajustes', ICON.ajustes],
 ];
-const tabsHTML = (activa) => `<nav class="tabs" aria-label="Secciones">${TABS.map(([id, href, nombre, icono]) =>
+const tabsHTML = (activa, lugar) => `<nav class="tabs tabs-${lugar}" aria-label="Secciones">${TABS.map(([id, href, nombre, icono]) =>
   `<a href="${href}" ${id === activa ? 'aria-current="page"' : ''}>${icono}<span>${nombre}</span></a>`).join('')}</nav>`;
 
-function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquetes' }) {
+function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquetes', compacto = false }) {
   $app.innerHTML = `
-    <header class="hero"><div class="wrap">
+    <header class="hero${compacto ? ' compacto' : ''}"><div class="wrap">
       <div class="top">
         <a class="brand" href="#/" aria-label="HubToHub, inicio"><img src="/img/logo-marca.svg" alt=""><span>Hub<b>To</b>Hub</span></a>
-        ${tabsHTML(tab)}
+        ${tabsHTML(tab, 'top')}
       </div>
       <div class="hero-row">
         <div>
@@ -87,7 +87,8 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
         ${accion || ''}
       </div>
     </div></header>
-    <main>${contenido}</main>`;
+    <main>${contenido}</main>
+    ${tabsHTML(tab, 'bottom')}`;
   document.title = `${titulo} · HubToHub`;
   window.scrollTo(0, 0);
 }
@@ -96,7 +97,7 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
 async function vistaListado() {
   layout({
     eyebrow: 'Panel de envíos', titulo: 'Paquetes', sub: 'Todo lo que compras, recoges y envías.',
-    accion: `<a class="btn" href="#/nuevo">${ICON.plus}Nuevo paquete</a>`,
+    accion: `<a class="btn" href="#/nuevo">${ICON.plus}Nuevo paquete</a>`, compacto: true,
     contenido: '<p class="empty glass">Cargando…</p>',
   });
   try {
@@ -123,7 +124,7 @@ async function vistaListado() {
     <div class="search-bar">
       <div class="search">${ICON.search}<input type="search" id="q" aria-label="Buscar paquetes" placeholder="Buscar remitente, destinatario o seguimiento" value="${esc(state.q)}"></div>
       <div class="chips" role="group" aria-label="Filtrar por estado">
-        ${[['', 'Todos'], ...Object.entries(ESTADOS)].map(([k, v]) => `<button type="button" class="chip" data-e="${k}" aria-pressed="${state.filtro === k}">${v}</button>`).join('')}
+        ${[['', 'Todos'], ...Object.entries(CORTO)].map(([k, v]) => `<button type="button" class="chip e-${k}" data-e="${k}" aria-pressed="${state.filtro === k}">${k ? '<i aria-hidden="true"></i>' : ''}${v}<span class="cnt">${k ? cuenta(k) : state.paquetes.length}</span></button>`).join('')}
       </div>
     </div>
     <ul class="list" id="lista"></ul>
@@ -163,7 +164,7 @@ function filaHTML(p, i) {
 }
 
 /* ---------- seguimiento: la línea avanza según la etapa de la entrega ---------- */
-const CORTO = { pendiente: 'Pendiente', en_reparto: 'En reparto', listo_para_recoger: 'Para recoger', entregado: 'Entregado' };
+const CORTO = { pendiente: 'Pendiente', en_reparto: 'En reparto', listo_para_recoger: 'Para recoger', entregado: 'Entregado', incidencia: 'Incidencia' };
 
 /** Etapas del recorrido. "Para recoger" solo aparece si el paquete pasó por ahí. */
 function etapasDe(p, eventos) {
