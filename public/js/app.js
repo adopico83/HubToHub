@@ -74,7 +74,7 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
   $app.innerHTML = `
     <header class="hero"><div class="wrap">
       <div class="top">
-        <a class="brand" href="#/" aria-label="HubToHub, inicio"><img src="/img/logo-icono.svg" alt=""><span>Hub<b>To</b>Hub</span></a>
+        <a class="brand" href="#/" aria-label="HubToHub, inicio"><img src="/img/logo-marca.svg" alt=""><span>Hub<b>To</b>Hub</span></a>
         ${tabsHTML(tab)}
       </div>
       <div class="hero-row">
