@@ -1,0 +1,4 @@
+# Apache: todo lo que no sea un fichero existente va al front controller.
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [L]
