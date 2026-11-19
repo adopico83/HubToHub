@@ -2,7 +2,7 @@
 :root{
   --f-body:'Figtree',system-ui,sans-serif;
   --f-head:'Fraunces',Georgia,serif;
-  --h1-m:36px; --h1-d:52px; --h1-case:none; --h1-track:-.02em; --h1-w:600;
+  --h1-m:36px; --h1-d:52px; --h1-case:none; --h1-track:-.02em; --h1-w:600; --brand-size:21px; --h2-size:21px;
 
   /* Paleta A · Cartón (por defecto) · claro */
   --bg:#F2ECE0; --surface:#FFFDF8; --surface-2:#EAE2D2; --ink:#2B2118; --muted:#6F6355; --line:#DDD2BE;
@@ -20,30 +20,43 @@
   --c-pendiente:#E0A63A; --c-en_reparto:#6C9BEA; --c-listo_para_recoger:#4FB8AE; --c-entregado:#5DBB82; --c-incidencia:#F0786F;
 }
 
-/* Paleta B · Bosque */
+/* Paleta B · Salvia: cabecera clara en verde salvia y acento rosa empolvado */
 :root[data-paleta=b]{
   --f-head:'Bricolage Grotesque',system-ui,sans-serif; --h1-w:700; --h1-track:-.03em;
-  --bg:#EDF0E8; --surface:#FAFBF6; --surface-2:#E1E6DA; --ink:#13281E; --muted:#58695F; --line:#D0D8CA;
-  --head-bg:#0F3A28; --head-ink:#EEF4E6; --head-muted:#B6C8B7;
-  --accent:#17603D; --accent-ink:#FFFFFF; --brand-2:#C9F26B; --logo-1:#C9F26B; --logo-2:#F2EFD9;
+  --bg:#ECEFE6; --surface:#F8F9F4; --surface-2:#DEE4D6; --ink:#27322B; --muted:#5F6D63; --line:#CFD7C6;
+  --head-bg:#D3DCC9; --head-ink:#25302A; --head-muted:#566459;
+  --accent:#A94F63; --accent-ink:#FFFFFF; --brand-2:#A94F63; --logo-1:#A94F63; --logo-2:#3E5B49;
 }
 :root[data-paleta=b][data-tema=oscuro]{
-  --bg:#0E1512; --surface:#16201B; --surface-2:#1E2B24; --ink:#E9F1E4; --muted:#93A89A; --line:#27362D;
-  --head-bg:#0A100D; --head-ink:#E9F1E4; --head-muted:#93A89A;
-  --accent:#C9F26B; --accent-ink:#0E2316;
+  --bg:#141A16; --surface:#1B231E; --surface-2:#252F28; --ink:#E6EDE2; --muted:#9AAA9F; --line:#2D3A32;
+  --head-bg:#0F1411; --head-ink:#E6EDE2; --head-muted:#9AAA9F;
+  --accent:#E08FA0; --accent-ink:#2A0F16; --brand-2:#E08FA0; --logo-1:#E08FA0; --logo-2:#C5D5BC;
 }
 
-/* Paleta C · Etiqueta */
+/* Paleta C · Marea: verde petróleo con albaricoque */
 :root[data-paleta=c]{
-  --f-head:'Barlow Condensed','Arial Narrow',sans-serif; --h1-m:46px; --h1-d:68px; --h1-case:uppercase; --h1-track:.01em; --h1-w:700;
-  --bg:#F5F1EA; --surface:#FFFFFF; --surface-2:#ECE6DB; --ink:#15161D; --muted:#5D5F6E; --line:#DFD8CB;
-  --head-bg:#15161D; --head-ink:#F5F1EA; --head-muted:#B4B3BC;
-  --accent:#FF5A36; --accent-ink:#15161D; --brand-2:#FF5A36; --logo-1:#FF5A36; --logo-2:#F5F1EA;
+  --f-head:'Instrument Serif',Georgia,serif; --h1-w:400; --h1-m:44px; --h1-d:64px; --h1-track:0; --brand-size:26px; --h2-size:26px;
+  --bg:#EEEBE4; --surface:#FAF8F3; --surface-2:#E3DFD5; --ink:#1E2B2D; --muted:#5C6B6B; --line:#D7D2C6;
+  --head-bg:#1F4A4F; --head-ink:#F1EEE6; --head-muted:#B9CBC8;
+  --accent:#1F6F6B; --accent-ink:#FFFFFF; --brand-2:#F0B58B; --logo-1:#F0B58B; --logo-2:#F1EEE6;
 }
 :root[data-paleta=c][data-tema=oscuro]{
-  --bg:#0F1015; --surface:#17181F; --surface-2:#20222B; --ink:#F3EFE8; --muted:#9B9CAA; --line:#2A2C37;
-  --head-bg:#0A0A0E; --head-ink:#F3EFE8; --head-muted:#9B9CAA;
-  --accent:#FF6A48; --accent-ink:#15161D;
+  --bg:#11191A; --surface:#182324; --surface-2:#213031; --ink:#E7EEEA; --muted:#92A8A5; --line:#2B3C3D;
+  --head-bg:#0C1314; --head-ink:#E7EEEA; --head-muted:#92A8A5;
+  --accent:#F0B58B; --accent-ink:#2A1608;
+}
+
+/* Paleta D · Granate: vino con rosa pálido */
+:root[data-paleta=d]{
+  --f-head:'Young Serif',Georgia,serif; --h1-w:400; --h1-m:34px; --h1-d:50px; --h1-track:-.01em; --brand-size:20px;
+  --bg:#F3EBE8; --surface:#FBF6F3; --surface-2:#E9DDD8; --ink:#3A1F28; --muted:#7A6068; --line:#E0D0CB;
+  --head-bg:#5A2233; --head-ink:#F8ECE8; --head-muted:#D9B7BD;
+  --accent:#8E2F45; --accent-ink:#FFFFFF; --brand-2:#F2B8A8; --logo-1:#F2B8A8; --logo-2:#F8ECE8;
+}
+:root[data-paleta=d][data-tema=oscuro]{
+  --bg:#1A1013; --surface:#24171B; --surface-2:#2F2026; --ink:#F4E6E3; --muted:#B39AA1; --line:#3C2A31;
+  --head-bg:#12090C; --head-ink:#F4E6E3; --head-muted:#B39AA1;
+  --accent:#E8899C; --accent-ink:#2B0D16;
 }
 
 .e-pendiente{--c:var(--c-pendiente)} .e-en_reparto{--c:var(--c-en_reparto)} .e-listo_para_recoger{--c:var(--c-listo_para_recoger)}
@@ -62,7 +75,7 @@ button,input,select{font:inherit;color:inherit}
 .wrap{max-width:1120px;margin:0 auto}
 .top{height:72px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .top-right{display:flex;align-items:center;gap:8px}
-.brand{display:flex;align-items:center;gap:12px;color:var(--head-ink);text-decoration:none;font:var(--h1-w) 21px var(--f-head);letter-spacing:var(--h1-track)}
+.brand{display:flex;align-items:center;gap:12px;color:var(--head-ink);text-decoration:none;font:var(--h1-w) var(--brand-size)/1 var(--f-head);letter-spacing:var(--h1-track)}
 .marca{display:inline-flex}
 .marca svg{height:30px;width:auto}
 .marca .l1{fill:var(--logo-1)} .marca .l2{fill:var(--logo-2)}
@@ -138,7 +151,7 @@ input[type=search]{padding-left:46px}
 
 /* Detalle */
 .card{padding:20px}
-.card h2{margin:0 0 14px;font:var(--h1-w) 21px var(--f-head);letter-spacing:var(--h1-track);text-transform:var(--h1-case)}
+.card h2{margin:0 0 14px;font:var(--h1-w) var(--h2-size) var(--f-head);letter-spacing:var(--h1-track);text-transform:var(--h1-case)}
 .route{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
 .route small,.kv dt{display:block;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .route strong{font:600 18px var(--f-body);overflow-wrap:anywhere}
@@ -242,7 +255,7 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 /* Escritorio */
 @media (min-width:760px){
   .hero{padding:0 32px 44px}
-  .top{height:88px}.brand{font-size:23px}.marca svg{height:34px}
+  .top{height:88px}.brand{font-size:calc(var(--brand-size) + 2px)}.marca svg{height:34px}
   .hero h1{font-size:var(--h1-d)}
   main{padding:28px 32px 64px;max-width:1184px}
   .stats{grid-template-columns:repeat(6,minmax(0,1fr));gap:16px}

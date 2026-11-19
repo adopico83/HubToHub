@@ -403,7 +403,7 @@ function vistaAjustes() {
         <h3>Tema</h3>
         <div class="seg" data-ajuste="tema">${[['auto', 'Automático'], ['claro', 'Claro'], ['oscuro', 'Oscuro']].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${guardado('tema', 'auto') === k}">${v}</button>`).join('')}</div>
         <h3>Paleta (para probar)</h3>
-        <div class="seg" data-ajuste="paleta">${[['a', 'A · Cartón'], ['b', 'B · Bosque'], ['c', 'C · Etiqueta']].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${guardado('paleta', 'a') === k}">${v}</button>`).join('')}</div>
+        <div class="seg" data-ajuste="paleta">${[['a', 'A · Cartón'], ['b', 'B · Salvia'], ['c', 'C · Marea'], ['d', 'D · Granate']].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${guardado('paleta', 'a') === k}">${v}</button>`).join('')}</div>
       </section>
       <section class="glass card" aria-label="Instalación"><h2>${ICON.caja}Instalar la app</h2>
         <p class="muted">${instalada() ? 'Ya la estás usando como app instalada.' : 'Instálala desde el menú del navegador («Instalar app» o «Añadir a pantalla de inicio») para abrirla como una app y recibir avisos también en el móvil.'}</p>
