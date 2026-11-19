@@ -1,27 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64" fill="none" role="img" aria-label="HubToHub">
-  <defs>
-    <linearGradient id="fondo" x1="8" y1="0" x2="56" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#223C8C"/>
-      <stop offset="1" stop-color="#0E1A3A"/>
-    </linearGradient>
-    <linearGradient id="ruta" x1="8" y1="52" x2="56" y2="12" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#7FA0FF" stop-opacity=".35"/>
-      <stop offset="1" stop-color="#7FA0FF"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="16" fill="url(#fondo)"/>
-  <!-- Ruta entre dos hubs: pasa por detrás de la caja -->
-  <path d="M10 51C8 28 26 11 52 13" stroke="url(#ruta)" stroke-width="3.2" stroke-linecap="round"/>
-  <!-- Hub de origen (anillo) y de destino (amarillo) -->
-  <circle cx="10" cy="51" r="5" fill="#16275A" stroke="#7FA0FF" stroke-width="3"/>
-  <circle cx="53" cy="13" r="5.5" fill="#FFC83D"/>
-  <circle cx="53" cy="13" r="2" fill="#16275A"/>
-  <!-- Caja isométrica con cinta -->
-  <g transform="translate(32 33.5) scale(1.15) translate(-32 -36)">
-    <path d="M32 19L47 27.5L32 36L17 27.5Z" fill="#FFE08A"/>
-    <path d="M17 27.5L32 36V53L17 44.5Z" fill="#FFC83D"/>
-    <path d="M32 36L47 27.5V44.5L32 53Z" fill="#E39F00"/>
-    <path d="M27.1 21.75L42.1 30.25L36.9 33.25L21.9 24.75Z" fill="#2F5BFF"/>
-    <path d="M36.9 33.25L42.1 30.25V47.27L36.9 50.22Z" fill="#2347D9"/>
+  <rect width="64" height="64" rx="16" fill="#0E1A3A"/>
+  <g transform="translate(11 15.25) scale(.0347)">
+    <path d="M1208 1H924L853 232L1027 212L1036 217L889 487L882 485L859 378L404 670L750 561L615 998H899Z" fill="#FFC83D"/>
+    <path d="M1024 215L737 247L826 316L462 439L595 1H312L60 804L790 340L843 341Z" fill="#2F5BFF"/>
+    <path d="M380 687L48 842L0 998H283Z" fill="#2F5BFF"/>
   </g>
 </svg>
