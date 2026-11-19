@@ -8,15 +8,23 @@ const raiz = fileURLToPath(new URL('..', import.meta.url));
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json',
   '.svg': 'image/svg+xml', '.png': 'image/png' };
 
-const lista = await import('../api/paquetes/index.js');
-const detalle = await import('../api/paquetes/[id].js');
+// Mismas rutas que `rewrites` en vercel.json. `id` se expone como req.query.id.
+const RUTAS = [
+  [/^\/paquetes\/?$/, (await import('../api/paquetes/index.js')).default],
+  [/^\/paquetes\/([^/]+)\/?$/, (await import('../api/paquetes/[id].js')).default, 'id'],
+  [/^\/eventos\/?$/, (await import('../api/eventos.js')).default],
+  [/^\/push\/?$/, (await import('../api/push/index.js')).default],
+  [/^\/push\/prueba\/?$/, (await import('../api/push/prueba.js')).default],
+];
 
 http.createServer(async (req, res) => {
   const { pathname } = new URL(req.url, 'http://x');
-  const m = pathname.match(/^\/paquetes(?:\/([^/]+))?\/?$/);
-  if (m) {
-    req.query = m[1] ? { id: m[1] } : {};
-    return (m[1] ? detalle : lista).default(req, res);
+  for (const [patron, fn, param] of RUTAS) {
+    const m = pathname.match(patron);
+    if (m) {
+      req.query = param ? { [param]: m[1] } : {};
+      return fn(req, res);
+    }
   }
   const ruta = normalize(pathname === '/' ? '/index.html' : pathname);
   try {

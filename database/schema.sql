@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS paquetes (
 CREATE INDEX IF NOT EXISTS paquetes_estado_idx ON paquetes (estado);
 CREATE INDEX IF NOT EXISTS paquetes_fecha_idx ON paquetes (fecha DESC);
 
--- Fase 2: historial de cambios de estado
+-- Historial de cambios de estado
 CREATE TABLE IF NOT EXISTS eventos (
   id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   paquete_id  BIGINT NOT NULL REFERENCES paquetes(id) ON DELETE CASCADE,
@@ -24,8 +24,19 @@ CREATE TABLE IF NOT EXISTS eventos (
   detalle     TEXT,
   ocurrido_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE INDEX IF NOT EXISTS eventos_paquete_idx ON eventos (paquete_id, ocurrido_en DESC);
+CREATE INDEX IF NOT EXISTS eventos_reciente_idx ON eventos (ocurrido_en DESC);
+
+-- Notificaciones push: un registro por navegador o dispositivo suscrito.
+CREATE TABLE IF NOT EXISTS push_suscripciones (
+  endpoint   TEXT PRIMARY KEY,
+  p256dh     TEXT NOT NULL,
+  auth       TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
 -- Seguridad: la app accede solo desde el servidor (rol de la cadena de conexión).
 -- Activar RLS sin políticas impide que la API pública de Supabase (anon key) lea o escriba estas tablas.
 ALTER TABLE paquetes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE eventos  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE push_suscripciones ENABLE ROW LEVEL SECURITY;

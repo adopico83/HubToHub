@@ -8,7 +8,7 @@ const leer = (f) => readFile(new URL(`../database/${f}`, import.meta.url), 'utf8
 try {
   const pool = db();
   if (args.includes('--reset')) {
-    await pool.query('DROP TABLE IF EXISTS eventos; DROP TABLE IF EXISTS paquetes;');
+    await pool.query('DROP TABLE IF EXISTS push_suscripciones; DROP TABLE IF EXISTS eventos; DROP TABLE IF EXISTS paquetes;');
     console.log('Tablas eliminadas.');
   }
   await pool.query(await leer('schema.sql'));

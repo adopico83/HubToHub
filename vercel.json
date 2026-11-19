@@ -5,6 +5,9 @@
   "outputDirectory": "public",
   "rewrites": [
     { "source": "/paquetes", "destination": "/api/paquetes" },
-    { "source": "/paquetes/:id", "destination": "/api/paquetes/:id" }
+    { "source": "/paquetes/:id", "destination": "/api/paquetes/:id" },
+    { "source": "/eventos", "destination": "/api/eventos" },
+    { "source": "/push", "destination": "/api/push" },
+    { "source": "/push/prueba", "destination": "/api/push/prueba" }
   ]
 }
