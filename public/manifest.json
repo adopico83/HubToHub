@@ -1,0 +1,16 @@
+{
+  "name": "HubToHub",
+  "short_name": "HubToHub",
+  "description": "Todos tus paquetes en un solo panel.",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F2F5FB",
+  "theme_color": "#0E1A3A",
+  "icons": [
+    { "src": "/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/img/logo-icono.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
