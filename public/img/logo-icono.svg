@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64" fill="none" role="img" aria-label="HubToHub">
+  <rect width="64" height="64" rx="18" fill="#16275A"/>
+  <path d="M9 53C6 30 24 9 55 11" stroke="#7FA0FF" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="9" cy="53" r="4.5" fill="#7FA0FF"/>
+  <circle cx="55" cy="11" r="4.5" fill="#FFC83D"/>
+  <path d="M32 12L50 22L32 32L14 22Z" fill="#FFE08A"/>
+  <path d="M14 22L32 32V52L14 42Z" fill="#FFC83D"/>
+  <path d="M32 32L50 22V42L32 52Z" fill="#E39F00"/>
+  <path d="M41 17L23 27V47" stroke="#2F5BFF" stroke-width="4" stroke-linejoin="round"/>
+</svg>
