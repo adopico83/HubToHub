@@ -88,7 +88,9 @@ document.addEventListener('click', (ev) => {
 
 /* ---------- Hubi en la cabecera: cada vez que se abre el listado sale una pose distinta (nunca la misma dos veces seguidas) ---------- */
 const POSES_HUBI = { tranquilo: [192, 420], senalando: [268, 420], saluda: [261, 420], pulgar: [232, 420], gorra: [322, 420] };
-const ALTO_HUBI_MOVIL = 108; // px; debe coincidir con .hubi en app.css
+const POSE_BICI = [254, 420]; // Hubi en bici: se muestra en el detalle de un paquete «en reparto»
+const ALTO_HUBI_MOVIL = { rotacion: 108, bici: 128 }; // px; deben coincidir con .hubi y .hubi.bici en app.css
+const medidasHubi = (pose) => (pose === 'bici' ? POSE_BICI : POSES_HUBI[pose]);
 function elegirHubi() {
   const anterior = guardado('hubi', '');
   const candidatas = Object.keys(POSES_HUBI).filter((n) => n !== anterior);
@@ -108,9 +110,11 @@ const tabsHTML = (activa, lugar) => `<nav class="tabs tabs-${lugar}" aria-label=
   `<a href="${href}" ${id === activa ? 'aria-current="page"' : ''}>${icono}<span>${nombre}</span></a>`).join('')}</nav>`;
 
 function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquetes', compacto = false, mascota = false }) {
-  const hubi = mascota ? elegirHubi() : null;
+  // mascota: true = una pose de la rotación; 'bici' = Hubi en bici.
+  const hubi = mascota === true ? elegirHubi() : mascota || null;
+  const altoMovil = hubi === 'bici' ? ALTO_HUBI_MOVIL.bici : ALTO_HUBI_MOVIL.rotacion;
   $app.innerHTML = `
-    <header class="hero${compacto ? ' compacto' : ''}" ${hubi ? `style="--hubi-w:${Math.round(ALTO_HUBI_MOVIL * POSES_HUBI[hubi][0] / POSES_HUBI[hubi][1])}px"` : ''}><div class="wrap">
+    <header class="hero${compacto ? ' compacto' : ''}${hubi ? ' conhubi' : ''}" ${hubi ? `style="--hubi-w:${Math.round(altoMovil * medidasHubi(hubi)[0] / medidasHubi(hubi)[1])}px"` : ''}><div class="wrap">
       <div class="top">
         <a class="brand" href="#/" aria-label="HubToHub, inicio"><span class="marca">${MARCA}</span><span>Hub<b>To</b>Hub</span></a>
         <div class="top-right">${tabsHTML(tab, 'top')}<button class="tema" id="tema" type="button"></button></div>
@@ -124,7 +128,7 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
         </div>
         ${accion || ''}
       </div>
-    </div>${hubi ? `<img class="hubi" src="/img/hubi/hubi-${hubi}.webp" alt="" width="${POSES_HUBI[hubi][0]}" height="${POSES_HUBI[hubi][1]}">` : ''}</header>
+    </div>${hubi ? `<img class="hubi${hubi === 'bici' ? ' bici' : ''}" src="/img/hubi/hubi-${hubi}.webp" alt="" width="${medidasHubi(hubi)[0]}" height="${medidasHubi(hubi)[1]}">` : ''}</header>
     <main>${contenido}</main>
     ${tabsHTML(tab, 'bottom')}`;
   document.title = `${titulo} · HubToHub`;
@@ -270,7 +274,7 @@ async function vistaDetalle(id) {
   const eventos = p.eventos || [];
 
   layout({
-    eyebrow: p.direccion === 'enviado' ? 'Envío' : 'Recepción', titulo: `Paquete #${p.id}`, sub: badgeText(p), volver: ['#/', 'Listado'],
+    eyebrow: p.direccion === 'enviado' ? 'Envío' : 'Recepción', titulo: `Paquete #${p.id}`, sub: badgeText(p), volver: ['#/', 'Listado'], mascota: p.estado === 'en_reparto' ? 'bici' : false,
     contenido: `
       <section class="glass card" aria-label="Seguimiento"><h2>Seguimiento</h2>${seguimientoHTML(p, eventos)}</section>
       <div class="grid2">
