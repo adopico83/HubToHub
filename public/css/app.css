@@ -1,4 +1,7 @@
 /* HubToHub · estilos. Paleta «Cartón»: papel cálido, marrón espresso y terracota. Colores y tipografía son variables; el tema oscuro solo las redefine. */
+/* Tipografías alojadas aquí (no se pide nada a Google): solo el subconjunto latino, suficiente para español. */
+@font-face{font-family:'Figtree';font-style:normal;font-weight:400 700;font-display:swap;src:url(/fonts/figtree-latin.woff2) format('woff2')}
+@font-face{font-family:'Fraunces';font-style:normal;font-weight:500 700;font-display:swap;src:url(/fonts/fraunces-latin.woff2) format('woff2')}
 :root{
   --f-body:'Figtree',system-ui,sans-serif;
   --f-head:'Fraunces',Georgia,serif;
@@ -322,3 +325,8 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .check span{display:flex;flex-direction:column;font-weight:600}
 .check small{font-weight:500;color:var(--muted);font-size:13px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.chips-flecha{animation:none!important}.row.recoger{animation:none!important;box-shadow:var(--shadow),0 0 0 2px color-mix(in srgb,var(--c-listo_para_recoger) 35%,transparent)}}
+
+.legal-links a{color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.enlace.peligro{color:color-mix(in srgb,var(--c-incidencia) 80%,var(--ink))}
+.borrar{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.borrar .actions{margin-top:12px}

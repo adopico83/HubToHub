@@ -2,6 +2,7 @@
 'use strict';
 
 const API = '/paquetes';
+const CUENTA = '/cuenta';
 const ESTADOS = {
   pendiente:          'Pendiente',
   en_reparto:         'En reparto',
@@ -575,6 +576,12 @@ function vistaAjustes() {
         <p class="muted">${sesion?.email ? `Has entrado como <b>${esc(sesion.email)}</b>.` : 'Sesión iniciada.'}</p>
         <div class="actions"><button class="btn ghost-d" id="salir" type="button">Cerrar sesión</button></div>
       </section>
+      <section class="glass card" aria-label="Privacidad y datos"><h2>${ICON.caja}Privacidad y datos</h2>
+        <p class="muted">Tus datos son tuyos: puedes llevártelos o borrarlos para siempre.</p>
+        <div class="actions"><button class="btn ghost-d" id="exportar" type="button">Descargar mis datos</button></div>
+        <div class="borrar" id="borrar-zona"><button class="enlace peligro" id="borrar-abrir" type="button">Eliminar mi cuenta…</button></div>
+        <p class="muted pequeno legal-links"><a href="/privacidad.html">Política de privacidad</a> · <a href="/terminos.html">Términos de uso</a></p>
+      </section>
       <section class="glass card" aria-label="Apariencia"><h2>${ICON.sol}Apariencia</h2>
         <p class="muted">Elige el tema de la app.</p>
         <div class="seg" data-ajuste="tema">${[['auto', 'Automático'], ['claro', 'Claro'], ['oscuro', 'Oscuro']].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${guardado('tema', 'auto') === k}">${v}</button>`).join('')}</div>
@@ -585,6 +592,8 @@ function vistaAjustes() {
   });
   pintarPush();
   document.getElementById('salir').addEventListener('click', cerrarSesion);
+  document.getElementById('exportar').addEventListener('click', descargarMisDatos);
+  document.getElementById('borrar-abrir').addEventListener('click', abrirBorrarCuenta);
   $app.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (ev) => {
     const b = ev.target.closest('button');
     if (!b) return;
@@ -675,6 +684,9 @@ function vistaAcceso() {
         ${modoAcceso === 'entrar' ? '<button type="button" class="enlace" data-modo="recuperar">He olvidado mi contraseña</button>' : ''}
       </div>
       ${nueva ? '<p class="muted pequeno">Mínimo 8 caracteres.</p>' : ''}
+      <p class="muted pequeno legal-links">${nueva
+        ? 'Al crear la cuenta aceptas los <a href="/terminos.html">Términos de uso</a> y la <a href="/privacidad.html">Política de privacidad</a>.'
+        : '<a href="/privacidad.html">Privacidad</a> · <a href="/terminos.html">Términos de uso</a>'}</p>
     </form></section>`,
   });
   const form = document.getElementById('acceso');
@@ -737,6 +749,52 @@ function vistaClaveNueva() {
     } catch { const a = document.getElementById('aviso-acceso'); a.textContent = 'No se pudo conectar.'; a.className = 'aviso mal'; }
     boton.disabled = false;
   });
+}
+
+/** Descarga todo lo que HubToHub guarda de la persona, en un fichero JSON. */
+async function descargarMisDatos(ev) {
+  const boton = ev.currentTarget;
+  boton.disabled = true;
+  try {
+    const r = await llamar(CUENTA);
+    if (r.code !== 200) return toast(r.message || 'No se pudieron descargar los datos', true);
+    const enlace = document.createElement('a');
+    enlace.href = URL.createObjectURL(new Blob([JSON.stringify(r.data, null, 2)], { type: 'application/json' }));
+    enlace.download = `hubtohub-mis-datos-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(enlace); enlace.click(); enlace.remove();
+    setTimeout(() => URL.revokeObjectURL(enlace.href), 10_000);
+    toast('Datos descargados');
+  } catch { toast('No se pudo conectar con el servidor', true); } finally { boton.disabled = false; }
+}
+
+/** Borrar la cuenta pide escribir el correo: es irreversible. */
+function abrirBorrarCuenta() {
+  const zona = document.getElementById('borrar-zona');
+  const correo = sesion?.email ?? '';
+  zona.innerHTML = `<form class="f" id="borrar-form" novalidate>
+    <p class="aviso mal">Se borrarán para siempre tus paquetes, su historial, tus avisos y tu cuenta. No se puede deshacer.</p>
+    <div class="field"><label for="borrar-conf">Escribe ${correo ? `<b>${esc(correo)}</b>` : 'ELIMINAR'} para confirmar</label>
+      <input id="borrar-conf" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="200"><div class="err" role="alert"></div></div>
+    <div class="actions"><button class="btn danger" type="submit">Eliminar para siempre</button><button class="btn ghost-d" type="button" id="borrar-no">Cancelar</button></div></form>`;
+  document.getElementById('borrar-no').addEventListener('click', () => vistaAjustes());
+  document.getElementById('borrar-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const boton = ev.currentTarget.querySelector('button[type=submit]');
+    const err = ev.currentTarget.querySelector('.err');
+    boton.disabled = true; err.textContent = '';
+    try {
+      const r = await llamar(CUENTA, { method: 'DELETE', body: { confirmar: document.getElementById('borrar-conf').value } });
+      if (r.code === 422) { err.textContent = r.data?.confirmar || r.message; boton.disabled = false; return; }
+      if (r.code !== 200) { toast(r.message || 'No se pudo eliminar la cuenta', true); boton.disabled = false; return; }
+      const sub = await navigator.serviceWorker?.getRegistration().then((g) => g?.pushManager.getSubscription()).catch(() => null);
+      sub?.unsubscribe().catch(() => {});
+      guardarSesion(null);
+      modoAcceso = 'entrar';
+      location.hash = '#/acceso';
+      toast('Tu cuenta y tus datos se han eliminado');
+    } catch { toast('No se pudo conectar con el servidor', true); boton.disabled = false; }
+  });
+  document.getElementById('borrar-conf').focus();
 }
 
 async function cerrarSesion() {
