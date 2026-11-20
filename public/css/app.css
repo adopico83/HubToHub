@@ -2,7 +2,7 @@
 :root{
   --f-body:'Figtree',system-ui,sans-serif;
   --f-head:'Fraunces',Georgia,serif;
-  --h1-m:36px; --h1-d:52px; --h1-case:none; --h1-track:-.02em; --h1-w:600; --brand-size:21px; --h2-size:21px;
+  --h1-m:36px; --h1-d:52px; --h1-case:none; --h1-track:-.02em; --h1-w:600; --brand-size:21px; --h2-size:21px; --head-pb:32px; --head-line:transparent;
 
   /* Paleta A · Cartón (por defecto) · claro */
   --bg:#F2ECE0; --surface:#FFFDF8; --surface-2:#EAE2D2; --ink:#2B2118; --muted:#6F6355; --line:#DDD2BE;
@@ -20,43 +20,46 @@
   --c-pendiente:#E0A63A; --c-en_reparto:#6C9BEA; --c-listo_para_recoger:#4FB8AE; --c-entregado:#5DBB82; --c-incidencia:#F0786F;
 }
 
-/* Paleta B · Salvia: cabecera clara en verde salvia y acento rosa empolvado */
+/* Paletas casi neutras: un solo acento, tipografía sans y cabecera integrada en el fondo (sin bloque de color). */
+:root[data-paleta=b],:root[data-paleta=c],:root[data-paleta=d]{--h1-w:700; --h1-track:-.025em; --head-pb:8px; --head-line:var(--line)}
+
+/* Paleta B · Piedra: greige cálido con acento verde musgo */
 :root[data-paleta=b]{
-  --f-head:'Bricolage Grotesque',system-ui,sans-serif; --h1-w:700; --h1-track:-.03em;
-  --bg:#ECEFE6; --surface:#F8F9F4; --surface-2:#DEE4D6; --ink:#27322B; --muted:#5F6D63; --line:#CFD7C6;
-  --head-bg:#D3DCC9; --head-ink:#25302A; --head-muted:#566459;
-  --accent:#A94F63; --accent-ink:#FFFFFF; --brand-2:#A94F63; --logo-1:#A94F63; --logo-2:#3E5B49;
+  --f-head:'Hanken Grotesk',system-ui,sans-serif;
+  --bg:#F3F1EC; --surface:#FBFAF7; --surface-2:#E9E6DF; --ink:#1F1D1A; --muted:#6A665E; --line:#DEDAD1;
+  --head-bg:#F3F1EC; --head-ink:#1F1D1A; --head-muted:#6A665E;
+  --accent:#56653E; --accent-ink:#FFFFFF; --brand-2:#56653E; --logo-1:#56653E; --logo-2:#1F1D1A;
 }
 :root[data-paleta=b][data-tema=oscuro]{
-  --bg:#141A16; --surface:#1B231E; --surface-2:#252F28; --ink:#E6EDE2; --muted:#9AAA9F; --line:#2D3A32;
-  --head-bg:#0F1411; --head-ink:#E6EDE2; --head-muted:#9AAA9F;
-  --accent:#E08FA0; --accent-ink:#2A0F16; --brand-2:#E08FA0; --logo-1:#E08FA0; --logo-2:#C5D5BC;
+  --bg:#171614; --surface:#1F1E1B; --surface-2:#292824; --ink:#EDEAE3; --muted:#9C978D; --line:#34322D;
+  --head-bg:#171614; --head-ink:#EDEAE3; --head-muted:#9C978D;
+  --accent:#A3B57F; --accent-ink:#161B0E; --brand-2:#A3B57F; --logo-1:#A3B57F; --logo-2:#EDEAE3;
 }
 
-/* Paleta C · Marea: verde petróleo con albaricoque */
+/* Paleta C · Niebla: gris frío con acento azul pizarra */
 :root[data-paleta=c]{
-  --f-head:'Instrument Serif',Georgia,serif; --h1-w:400; --h1-m:44px; --h1-d:64px; --h1-track:0; --brand-size:26px; --h2-size:26px;
-  --bg:#EEEBE4; --surface:#FAF8F3; --surface-2:#E3DFD5; --ink:#1E2B2D; --muted:#5C6B6B; --line:#D7D2C6;
-  --head-bg:#1F4A4F; --head-ink:#F1EEE6; --head-muted:#B9CBC8;
-  --accent:#1F6F6B; --accent-ink:#FFFFFF; --brand-2:#F0B58B; --logo-1:#F0B58B; --logo-2:#F1EEE6;
+  --f-head:'Manrope',system-ui,sans-serif;
+  --bg:#F1F2F3; --surface:#FAFBFB; --surface-2:#E6E8EA; --ink:#1C2126; --muted:#626B73; --line:#D9DDE0;
+  --head-bg:#F1F2F3; --head-ink:#1C2126; --head-muted:#626B73;
+  --accent:#4F6577; --accent-ink:#FFFFFF; --brand-2:#4F6577; --logo-1:#4F6577; --logo-2:#1C2126;
 }
 :root[data-paleta=c][data-tema=oscuro]{
-  --bg:#11191A; --surface:#182324; --surface-2:#213031; --ink:#E7EEEA; --muted:#92A8A5; --line:#2B3C3D;
-  --head-bg:#0C1314; --head-ink:#E7EEEA; --head-muted:#92A8A5;
-  --accent:#F0B58B; --accent-ink:#2A1608;
+  --bg:#14181B; --surface:#1B2024; --surface-2:#252B30; --ink:#E8ECEF; --muted:#8F9AA3; --line:#2E353B;
+  --head-bg:#14181B; --head-ink:#E8ECEF; --head-muted:#8F9AA3;
+  --accent:#9DB4C5; --accent-ink:#0E161C; --brand-2:#9DB4C5; --logo-1:#9DB4C5; --logo-2:#E8ECEF;
 }
 
-/* Paleta D · Granate: vino con rosa pálido */
+/* Paleta D · Tiza: monocromo; el único color son los estados */
 :root[data-paleta=d]{
-  --f-head:'Young Serif',Georgia,serif; --h1-w:400; --h1-m:34px; --h1-d:50px; --h1-track:-.01em; --brand-size:20px;
-  --bg:#F3EBE8; --surface:#FBF6F3; --surface-2:#E9DDD8; --ink:#3A1F28; --muted:#7A6068; --line:#E0D0CB;
-  --head-bg:#5A2233; --head-ink:#F8ECE8; --head-muted:#D9B7BD;
-  --accent:#8E2F45; --accent-ink:#FFFFFF; --brand-2:#F2B8A8; --logo-1:#F2B8A8; --logo-2:#F8ECE8;
+  --f-head:'Figtree',system-ui,sans-serif;
+  --bg:#F5F5F3; --surface:#FCFCFB; --surface-2:#EBEBE8; --ink:#1A1A1A; --muted:#6B6B68; --line:#DFDFDB;
+  --head-bg:#F5F5F3; --head-ink:#1A1A1A; --head-muted:#6B6B68;
+  --accent:#1A1A1A; --accent-ink:#FFFFFF; --brand-2:#6B6B68; --logo-1:#1A1A1A; --logo-2:#8A8A85;
 }
 :root[data-paleta=d][data-tema=oscuro]{
-  --bg:#1A1013; --surface:#24171B; --surface-2:#2F2026; --ink:#F4E6E3; --muted:#B39AA1; --line:#3C2A31;
-  --head-bg:#12090C; --head-ink:#F4E6E3; --head-muted:#B39AA1;
-  --accent:#E8899C; --accent-ink:#2B0D16;
+  --bg:#151515; --surface:#1D1D1D; --surface-2:#272727; --ink:#EDEDEA; --muted:#999995; --line:#313131;
+  --head-bg:#151515; --head-ink:#EDEDEA; --head-muted:#999995;
+  --accent:#EDEDEA; --accent-ink:#151515; --brand-2:#999995; --logo-1:#EDEDEA; --logo-2:#77776F;
 }
 
 .e-pendiente{--c:var(--c-pendiente)} .e-en_reparto{--c:var(--c-en_reparto)} .e-listo_para_recoger{--c:var(--c-listo_para_recoger)}
@@ -71,7 +74,7 @@ button,input,select{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
 /* Cabecera */
-.hero{background:var(--head-bg);color:var(--head-ink);padding:0 20px 32px}
+.hero{background:var(--head-bg);color:var(--head-ink);padding:0 20px var(--head-pb);border-bottom:1px solid var(--head-line)}
 .wrap{max-width:1120px;margin:0 auto}
 .top{height:72px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .top-right{display:flex;align-items:center;gap:8px}
@@ -241,7 +244,7 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
     background:var(--surface);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.18)}
   .fab{display:inline-flex;position:fixed;right:20px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.28)}
   main{padding-bottom:120px}
-  .hero.compacto{padding-bottom:24px}
+  .hero.compacto{padding-bottom:calc(var(--head-pb)*.75)}
   .hero.compacto .eyebrow,.hero.compacto .sub{display:none}
   .search{margin-top:0}
   .act{grid-template-columns:14px 1fr auto}
@@ -254,7 +257,7 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 
 /* Escritorio */
 @media (min-width:760px){
-  .hero{padding:0 32px 44px}
+  .hero{padding:0 32px calc(var(--head-pb) + 12px)}
   .top{height:88px}.brand{font-size:calc(var(--brand-size) + 2px)}.marca svg{height:34px}
   .hero h1{font-size:var(--h1-d)}
   main{padding:28px 32px 64px;max-width:1184px}
