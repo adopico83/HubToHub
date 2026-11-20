@@ -86,6 +86,17 @@ document.addEventListener('click', (ev) => {
   aplicarTema();
 });
 
+/* ---------- Hubi en la cabecera: cada vez que se abre el listado sale una pose distinta (nunca la misma dos veces seguidas) ---------- */
+const POSES_HUBI = { tranquilo: [192, 420], senalando: [268, 420], saluda: [261, 420], pulgar: [232, 420], gorra: [322, 420] };
+const ALTO_HUBI_MOVIL = 108; // px; debe coincidir con .hubi en app.css
+function elegirHubi() {
+  const anterior = guardado('hubi', '');
+  const candidatas = Object.keys(POSES_HUBI).filter((n) => n !== anterior);
+  const nombre = candidatas[Math.floor(Math.random() * candidatas.length)];
+  guardar('hubi', nombre);
+  return nombre;
+}
+
 /* ---------- estructura común ---------- */
 const MARCA = '<svg viewBox="0 0 1210 1000" aria-hidden="true"><path class="l2" d="M1208 1H924L853 232L1027 212L1036 217L889 487L882 485L859 378L404 670L750 561L615 998H899Z"/><path class="l1" d="M1024 215L737 247L826 316L462 439L595 1H312L60 804L790 340L843 341Z"/><path class="l1" d="M380 687L48 842L0 998H283Z"/></svg>';
 const TABS = [
@@ -97,8 +108,9 @@ const tabsHTML = (activa, lugar) => `<nav class="tabs tabs-${lugar}" aria-label=
   `<a href="${href}" ${id === activa ? 'aria-current="page"' : ''}>${icono}<span>${nombre}</span></a>`).join('')}</nav>`;
 
 function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquetes', compacto = false, mascota = false }) {
+  const hubi = mascota ? elegirHubi() : null;
   $app.innerHTML = `
-    <header class="hero${compacto ? ' compacto' : ''}"><div class="wrap">
+    <header class="hero${compacto ? ' compacto' : ''}" ${hubi ? `style="--hubi-w:${Math.round(ALTO_HUBI_MOVIL * POSES_HUBI[hubi][0] / POSES_HUBI[hubi][1])}px"` : ''}><div class="wrap">
       <div class="top">
         <a class="brand" href="#/" aria-label="HubToHub, inicio"><span class="marca">${MARCA}</span><span>Hub<b>To</b>Hub</span></a>
         <div class="top-right">${tabsHTML(tab, 'top')}<button class="tema" id="tema" type="button"></button></div>
@@ -112,7 +124,7 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
         </div>
         ${accion || ''}
       </div>
-    </div>${mascota ? '<img class="hubi" src="/img/hubi-feliz.webp" alt="" width="284" height="420">' : ''}</header>
+    </div>${hubi ? `<img class="hubi" src="/img/hubi/hubi-${hubi}.webp" alt="" width="${POSES_HUBI[hubi][0]}" height="${POSES_HUBI[hubi][1]}">` : ''}</header>
     <main>${contenido}</main>
     ${tabsHTML(tab, 'bottom')}`;
   document.title = `${titulo} · HubToHub`;
