@@ -73,7 +73,6 @@ function aplicarTema() {
   const modo = guardado('tema', 'auto');
   const root = document.documentElement;
   root.dataset.tema = modo === 'oscuro' || (modo === 'auto' && prefiereOscuro()) ? 'oscuro' : 'claro';
-  root.dataset.paleta = guardado('paleta', 'a');
   // La barra de estado del móvil toma el color de la cabecera.
   const color = getComputedStyle(root).getPropertyValue('--head-bg').trim();
   if (color) document.querySelector('meta[name=theme-color]')?.setAttribute('content', color);
@@ -400,10 +399,8 @@ function vistaAjustes() {
     contenido: `<div class="grid2 ajustes">
       <section class="glass card" aria-label="Notificaciones"><h2>${ICON.aviso}Notificaciones</h2><div id="push"><p class="muted">Comprobando…</p></div></section>
       <section class="glass card" aria-label="Apariencia"><h2>${ICON.sol}Apariencia</h2>
-        <h3>Tema</h3>
+        <p class="muted">Elige el tema de la app.</p>
         <div class="seg" data-ajuste="tema">${[['auto', 'Automático'], ['claro', 'Claro'], ['oscuro', 'Oscuro']].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${guardado('tema', 'auto') === k}">${v}</button>`).join('')}</div>
-        <h3>Paleta (para probar)</h3>
-        <div class="seg" data-ajuste="paleta">${[['a', 'A · Cartón'], ['b', 'B · Piedra'], ['c', 'C · Niebla'], ['d', 'D · Tiza']].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${guardado('paleta', 'a') === k}">${v}</button>`).join('')}</div>
       </section>
       <section class="glass card" aria-label="Instalación"><h2>${ICON.caja}Instalar la app</h2>
         <p class="muted">${instalada() ? 'Ya la estás usando como app instalada.' : 'Instálala desde el menú del navegador («Instalar app» o «Añadir a pantalla de inicio») para abrirla como una app y recibir avisos también en el móvil.'}</p>
