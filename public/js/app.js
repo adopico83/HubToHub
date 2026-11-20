@@ -40,6 +40,7 @@ const ICON = {
   aviso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0112 0c0 6 2 7 2 7H4s2-1 2-7M10 20a2 2 0 004 0"/></svg>',
   sol: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
   luna: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></svg>',
+  flecha: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
   search: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
 };
 
@@ -264,8 +265,12 @@ async function vistaListado() {
     </section>
     <div class="search-bar">
       <div class="search">${ICON.search}<input type="search" id="q" aria-label="Buscar paquetes" placeholder="Buscar remitente, destinatario o seguimiento" value="${esc(state.q)}"></div>
+      <div class="chips-wrap">
+        <button type="button" class="chips-flecha izq" aria-label="Ver los filtros anteriores" tabindex="-1">${ICON.flecha}</button>
       <div class="chips" role="group" aria-label="Filtrar por estado">
         ${[['', 'Todos'], ...Object.entries(CORTO)].map(([k, v]) => `<button type="button" class="chip e-${k}" data-e="${k}" aria-pressed="${state.filtro === k}">${k ? '<i aria-hidden="true"></i>' : ''}${v}<span class="cnt">${k ? cuenta(k) : state.paquetes.length}</span></button>`).join('')}
+      </div>
+        <button type="button" class="chips-flecha der" aria-label="Ver más filtros" tabindex="-1">${ICON.flecha}</button>
       </div>
     </div>
     <ul class="list" id="lista"></ul>
@@ -285,6 +290,25 @@ async function vistaListado() {
   };
   document.getElementById('q').addEventListener('input', (e) => { state.q = e.target.value; pintar(); });
   // Las casillas de resumen (escritorio) y los filtros (móvil) hacen lo mismo; pulsar la casilla activa vuelve a mostrar todo.
+  // Filtros deslizables: las flechas y los degradados de los bordes avisan de que hay más a cada lado.
+  const envoltorio = main.querySelector('.chips-wrap');
+  const fila = main.querySelector('.chips');
+  const marcarVisto = () => { if (!guardado('chips-visto', '')) { guardar('chips-visto', '1'); envoltorio.classList.remove('late'); } };
+  const actualizarFlechas = () => {
+    const max = fila.scrollWidth - fila.clientWidth;
+    envoltorio.classList.toggle('hay-izq', fila.scrollLeft > 4);
+    envoltorio.classList.toggle('hay-der', max > 4 && fila.scrollLeft < max - 4);
+  };
+  envoltorio.classList.toggle('late', !guardado('chips-visto', ''));
+  fila.addEventListener('scroll', () => { if (fila.scrollLeft > 4) marcarVisto(); actualizarFlechas(); }, { passive: true });
+  envoltorio.querySelector('.der').addEventListener('click', () => { marcarVisto(); fila.scrollBy({ left: Math.round(fila.clientWidth * 0.7), behavior: 'smooth' }); });
+  envoltorio.querySelector('.izq').addEventListener('click', () => fila.scrollBy({ left: -Math.round(fila.clientWidth * 0.7), behavior: 'smooth' }));
+  addEventListener('resize', actualizarFlechas);
+  // Con un filtro ya elegido, que su botón quede a la vista.
+  const activo = fila.querySelector('.chip[aria-pressed=true]');
+  if (activo && activo.offsetLeft + activo.offsetWidth > fila.clientWidth) fila.scrollLeft = activo.offsetLeft - 16;
+  actualizarFlechas();
+
   main.addEventListener('click', (e) => {
     const b = e.target.closest('.chip, .stat');
     if (!b) return;
