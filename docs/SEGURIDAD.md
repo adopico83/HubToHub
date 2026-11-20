@@ -15,7 +15,7 @@
 | Región | La base de datos está en `eu-west-1` (Irlanda); las funciones se fijan a `dub1` (Dublín) en `vercel.json`. |
 
 ## Pendiente (lo haces tú, en los paneles)
-1. **Rellenar los 3 datos marcados en amarillo** en las páginas legales: nombre del titular y correo de contacto (aparecen en ambas páginas).
+1. ~~Rellenar el titular y el correo de contacto en las páginas legales~~ (hecho: Andrés Dopico, `adopico83@hotmail.com`). Si algún día cambia el correo, hay que actualizarlo en `public/privacidad.html` y `public/terminos.html`.
 2. **Probar «Eliminar mi cuenta» contra Supabase** con una cuenta de prueba tras el despliegue: el borrado de `auth.users` solo está probado en local con un esquema simulado.
 3. Supabase → Authentication: contraseña mínima de 8 o más y exigir complejidad; activar la protección contra contraseñas filtradas (plan Pro); valorar CAPTCHA en el registro y un SMTP propio (el de pruebas de Supabase tiene un límite bajo de correos).
 4. Cerrar los registros cuando solo quieras usuarios invitados; quitar la protección de despliegue de Vercel cuando la app deba ser pública.
