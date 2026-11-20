@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64" fill="none" role="img" aria-label="HubToHub">
-  <rect width="64" height="64" rx="16" fill="#0E1A3A"/>
+  <rect width="64" height="64" rx="16" fill="#2B2118"/>
   <g transform="translate(11 15.25) scale(.0347)">
-    <path d="M1208 1H924L853 232L1027 212L1036 217L889 487L882 485L859 378L404 670L750 561L615 998H899Z" fill="#FFC83D"/>
-    <path d="M1024 215L737 247L826 316L462 439L595 1H312L60 804L790 340L843 341Z" fill="#2F5BFF"/>
-    <path d="M380 687L48 842L0 998H283Z" fill="#2F5BFF"/>
+    <path d="M1208 1H924L853 232L1027 212L1036 217L889 487L882 485L859 378L404 670L750 561L615 998H899Z" fill="#F0B64E"/>
+    <path d="M1024 215L737 247L826 316L462 439L595 1H312L60 804L790 340L843 341Z" fill="#E8663A"/>
+    <path d="M380 687L48 842L0 998H283Z" fill="#E8663A"/>
   </g>
 </svg>

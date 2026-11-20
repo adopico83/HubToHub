@@ -9,7 +9,7 @@ const ESTADOS = {
   entregado:          'Entregado',
   incidencia:         'Incidencia',
 };
-const AVATARES = ['#DCE6FF', '#FFE9A8', '#CDF3E1', '#FFD9D5', '#E9DDFF', '#D2F1F5', '#FFDFC7'];
+const AVATARES = ['#C8501A', '#B7791F', '#2F63B8', '#1F7A74', '#2E7D4F', '#8A4F7D', '#6B6B3A'];
 const $app = document.getElementById('app');
 const state = { paquetes: [], q: '', filtro: '' };
 
@@ -38,6 +38,8 @@ const ICON = {
   actividad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
   ajustes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>',
   aviso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0112 0c0 6 2 7 2 7H4s2-1 2-7M10 20a2 2 0 004 0"/></svg>',
+  sol: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  luna: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></svg>',
   search: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
 };
 
@@ -61,7 +63,31 @@ async function llamar(url, options = {}) {
 }
 const api = (path = '', options = {}) => llamar(API + path, options);
 
+/* ---------- tema (claro/oscuro) y paleta ---------- */
+const guardado = (k, def) => { try { return localStorage.getItem(k) || def; } catch { return def; } };
+const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } };
+const prefiereOscuro = () => matchMedia('(prefers-color-scheme: dark)').matches;
+const esOscuro = () => document.documentElement.dataset.tema === 'oscuro';
+
+function aplicarTema() {
+  const modo = guardado('tema', 'auto');
+  const root = document.documentElement;
+  root.dataset.tema = modo === 'oscuro' || (modo === 'auto' && prefiereOscuro()) ? 'oscuro' : 'claro';
+  // La barra de estado del móvil toma el color de la cabecera.
+  const color = getComputedStyle(root).getPropertyValue('--head-bg').trim();
+  if (color) document.querySelector('meta[name=theme-color]')?.setAttribute('content', color);
+  const boton = document.getElementById('tema');
+  if (boton) { boton.innerHTML = esOscuro() ? ICON.sol : ICON.luna; boton.setAttribute('aria-label', esOscuro() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'); }
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', aplicarTema);
+document.addEventListener('click', (ev) => {
+  if (!ev.target.closest('#tema')) return;
+  guardar('tema', esOscuro() ? 'claro' : 'oscuro');
+  aplicarTema();
+});
+
 /* ---------- estructura común ---------- */
+const MARCA = '<svg viewBox="0 0 1210 1000" aria-hidden="true"><path class="l2" d="M1208 1H924L853 232L1027 212L1036 217L889 487L882 485L859 378L404 670L750 561L615 998H899Z"/><path class="l1" d="M1024 215L737 247L826 316L462 439L595 1H312L60 804L790 340L843 341Z"/><path class="l1" d="M380 687L48 842L0 998H283Z"/></svg>';
 const TABS = [
   ['paquetes', '#/', 'Paquetes', ICON.caja],
   ['actividad', '#/actividad', 'Actividad', ICON.actividad],
@@ -74,8 +100,8 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
   $app.innerHTML = `
     <header class="hero${compacto ? ' compacto' : ''}"><div class="wrap">
       <div class="top">
-        <a class="brand" href="#/" aria-label="HubToHub, inicio"><img src="/img/logo-marca.svg" alt=""><span>Hub<b>To</b>Hub</span></a>
-        ${tabsHTML(tab, 'top')}
+        <a class="brand" href="#/" aria-label="HubToHub, inicio"><span class="marca">${MARCA}</span><span>Hub<b>To</b>Hub</span></a>
+        <div class="top-right">${tabsHTML(tab, 'top')}<button class="tema" id="tema" type="button"></button></div>
       </div>
       <div class="hero-row">
         <div>
@@ -90,6 +116,7 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
     <main>${contenido}</main>
     ${tabsHTML(tab, 'bottom')}`;
   document.title = `${titulo} · HubToHub`;
+  aplicarTema();
   window.scrollTo(0, 0);
 }
 
@@ -119,7 +146,7 @@ async function vistaListado() {
   ];
   main.innerHTML = `
     <section class="stats" aria-label="Resumen">
-      ${stats.map(([e, l, n]) => `<div class="glass stat ${e ? 's-' + e : ''}"><span>${l}</span><b>${n}</b></div>`).join('')}
+      ${stats.map(([e, l, n]) => `<div class="stat ${e ? 'e-' + e : 's-total'}"><span>${l}</span><b>${n}</b></div>`).join('')}
     </section>
     <div class="search-bar">
       <div class="search">${ICON.search}<input type="search" id="q" aria-label="Buscar paquetes" placeholder="Buscar remitente, destinatario o seguimiento" value="${esc(state.q)}"></div>
@@ -154,7 +181,7 @@ function filaHTML(p, i) {
   const contraparte = p.direccion === 'enviado' ? `Para ${p.destinatario}` : `De ${p.remitente}`;
   const nombre = p.direccion === 'enviado' ? p.destinatario : p.remitente;
   return `<li><a class="glass row" href="#/paquete/${p.id}">
-    <div class="avatar" style="background:${AVATARES[p.id % AVATARES.length]}" aria-hidden="true">${esc(iniciales(nombre))}</div>
+    <div class="avatar" style="--c:${AVATARES[p.id % AVATARES.length]}" aria-hidden="true">${esc(iniciales(nombre))}</div>
     <div class="who">${esc(nombre)}<small>#${p.id}</small></div>
     ${badge(p.estado)}
     <div class="meta">${p.direccion === 'enviado' ? 'Enviado' : 'Recibido'} · ${fechaES(p.fecha)}${p.paqueteria ? ' · ' + esc(p.paqueteria) : ''}</div>
@@ -371,11 +398,22 @@ function vistaAjustes() {
     eyebrow: 'Preferencias', titulo: 'Ajustes', sub: 'Avisos e instalación de la app.', tab: 'ajustes',
     contenido: `<div class="grid2 ajustes">
       <section class="glass card" aria-label="Notificaciones"><h2>${ICON.aviso}Notificaciones</h2><div id="push"><p class="muted">Comprobando…</p></div></section>
+      <section class="glass card" aria-label="Apariencia"><h2>${ICON.sol}Apariencia</h2>
+        <p class="muted">Elige el tema de la app.</p>
+        <div class="seg" data-ajuste="tema">${[['auto', 'Automático'], ['claro', 'Claro'], ['oscuro', 'Oscuro']].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${guardado('tema', 'auto') === k}">${v}</button>`).join('')}</div>
+      </section>
       <section class="glass card" aria-label="Instalación"><h2>${ICON.caja}Instalar la app</h2>
         <p class="muted">${instalada() ? 'Ya la estás usando como app instalada.' : 'Instálala desde el menú del navegador («Instalar app» o «Añadir a pantalla de inicio») para abrirla como una app y recibir avisos también en el móvil.'}</p>
       </section></div>`,
   });
   pintarPush();
+  $app.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (ev) => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    guardar(seg.dataset.ajuste, b.dataset.v);
+    aplicarTema();
+    seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  }));
 }
 
 /* ---------- alta / edición ---------- */
