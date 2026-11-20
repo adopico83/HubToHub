@@ -146,7 +146,7 @@ async function vistaListado() {
   ];
   main.innerHTML = `
     <section class="stats" aria-label="Resumen">
-      ${stats.map(([e, l, n]) => `<div class="stat ${e ? 'e-' + e : 's-total'}"><span>${l}</span><b>${n}</b></div>`).join('')}
+      ${stats.map(([e, l, n]) => `<button type="button" class="stat ${e ? 'e-' + e : 's-total'}" data-e="${e}" aria-pressed="${state.filtro === e}"><span>${l}</span><b>${n}</b></button>`).join('')}
     </section>
     <div class="search-bar">
       <div class="search">${ICON.search}<input type="search" id="q" aria-label="Buscar paquetes" placeholder="Buscar remitente, destinatario o seguimiento" value="${esc(state.q)}"></div>
@@ -167,12 +167,15 @@ async function vistaListado() {
       ? lista.map(filaHTML).join('')
       : '<li class="empty glass">No hay paquetes que coincidan.</li>';
     document.getElementById('count').textContent = `Mostrando ${lista.length} de ${state.paquetes.length} paquetes`;
-    main.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.e === state.filtro)));
+    main.querySelectorAll('.chip, .stat').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.e === state.filtro)));
   };
   document.getElementById('q').addEventListener('input', (e) => { state.q = e.target.value; pintar(); });
-  main.querySelector('.chips').addEventListener('click', (e) => {
-    const b = e.target.closest('.chip');
-    if (b) { state.filtro = b.dataset.e; pintar(); }
+  // Las casillas de resumen (escritorio) y los filtros (móvil) hacen lo mismo; pulsar la casilla activa vuelve a mostrar todo.
+  main.addEventListener('click', (e) => {
+    const b = e.target.closest('.chip, .stat');
+    if (!b) return;
+    state.filtro = b.classList.contains('stat') && b.dataset.e && b.dataset.e === state.filtro ? '' : b.dataset.e;
+    pintar();
   });
   pintar();
 }
