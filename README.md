@@ -35,7 +35,12 @@ La app consulta sola el estado de los paquetes con número de seguimiento a un *
 - **Paquetes que se consultan:** con número de seguimiento, abiertos (no entregados), con la casilla «Consultar el seguimiento automáticamente» y de los últimos 60 días; los consultados hace más tiempo, primero.
 - **Tarea periódica:** `GET /api/cron/seguimiento` con `Authorization: Bearer <CRON_SECRET>`. Consulta hasta `SEGUIMIENTO_MAX_POR_EJECUCION` paquetes (15 por defecto). **Aún no está programada en `vercel.json`**: se añadirá tras comprobar en una vista previa cada cuánto permite ejecutarla el plan de Vercel.
 - **Actualizar ahora:** `POST /paquetes/{id}` consulta un paquete al momento (como mucho una vez por minuto).
-- **PIN y punto de recogida:** el seguimiento no da el PIN (lo envía la paquetería por SMS o correo); habrá que escribirlo a mano o sacarlo del correo (Fase 3).
+- **PIN y punto de recogida:** el seguimiento no da el PIN (lo envía la paquetería por SMS o correo), así que se escribe a mano (ver abajo).
+
+## Recogida en locker o punto (con PIN)
+Un paquete `listo_para_recoger` guarda **dónde** recogerlo (`punto_recogida`), **hasta cuándo** (`recoger_hasta`) y el **PIN**. El listado destaca los que hay que recoger (aviso «Para recoger» con lo que caduca antes) y el detalle tiene una tarjeta «Recogida» con el PIN oculto (Mostrar / Copiar) y «Marcar como recogido».
+- **El PIN va cifrado** (AES-256-GCM, `lib/pin.js`) con la clave `PIN_CLAVE` (`npm run pin:clave` la genera). Nunca sale en los listados ni en las notificaciones: solo en `GET /paquetes/{id}`, a su dueño. Al marcar el paquete como entregado (a mano o por el seguimiento) se borra el PIN y la fecha límite. Sin `PIN_CLAVE` el servidor responde 503 al intentar guardar un PIN; el resto funciona.
+- En la API: `punto_recogida` (texto, hasta 120), `recoger_hasta` (`AAAA-MM-DD`) y `pin` (3 a 24 caracteres: letras, números, espacios o guiones; `""` lo borra; si no se envía, no cambia). Las respuestas llevan `tiene_pin`.
 
 ## API
 Siempre devuelve `{status, code, message, data}` (salvo `204`, que no lleva cuerpo). Todas las rutas, salvo `/config`, exigen sesión.
@@ -68,8 +73,9 @@ Estados: `pendiente`, `en_reparto`, `listo_para_recoger`, `entregado`, `incidenc
 - `docs/` plan, paleta, bocetos y logo
 
 ## Despliegue (Vercel + Supabase)
-1. Ejecuta `database/schema.sql` en el SQL Editor de Supabase. Si la base ya existía de antes, ejecuta en su lugar las migraciones de `database/migraciones/` que falten (`002` historial y push, `003` cuentas, `004` seguimiento automático).
+1. Ejecuta `database/schema.sql` en el SQL Editor de Supabase. Si la base ya existía de antes, ejecuta en su lugar las migraciones de `database/migraciones/` que falten (`002` historial y push, `003` cuentas, `004` seguimiento automático, `005` recogida).
 2. En Vercel, importa el repo y añade la variable `DATABASE_URL` (cadena *pooler* de Supabase).
+2 bis. PIN de recogida: `npm run pin:clave` y añade `PIN_CLAVE` en Vercel (secreta; no la pierdas: los PIN guardados dejarían de leerse).
 3. Notificaciones push (opcional): `npm run vapid` genera las claves; añade `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (secreta) y `VAPID_SUBJECT` en Vercel y vuelve a desplegar. Después, en la app, ve a Ajustes → Activar notificaciones. En iPhone hay que instalar antes la app en la pantalla de inicio.
 4. Cada commit a `main` se publica en producción; el resto de ramas generan *previews*.
 

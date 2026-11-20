@@ -17,7 +17,11 @@ CREATE TABLE IF NOT EXISTS paquetes (
   seguimiento_auto   BOOLEAN NOT NULL DEFAULT true,
   courier            TEXT,
   consultado_en      TIMESTAMPTZ,
-  estado_manual_en   TIMESTAMPTZ
+  estado_manual_en   TIMESTAMPTZ,
+  -- Recogida en locker o punto (ver migración 005)
+  punto_recogida     TEXT,
+  recoger_hasta      DATE,
+  pin_cifrado        TEXT
 );
 
 CREATE INDEX IF NOT EXISTS paquetes_estado_idx ON paquetes (estado);

@@ -40,6 +40,7 @@ Hoy una incidencia solo se muestra (estado rojo y Hubi preocupado). Falta poder 
 - **Límite:** un servidor no puede leer tus SMS. Opciones: reenviar los SMS al correo o a Telegram con una app en el móvil, o pegar el aviso a mano.
 
 ## Fase 4 – Lockers y puntos de recogida (el hueco diferencial)
+> Estado: **hecho a mano**. Cada paquete listo para recoger guarda punto de recogida, fecha límite y PIN (cifrado con AES-256-GCM, clave en `PIN_CLAVE`); el listado destaca «Para recoger» con lo que caduca antes, y «Marcar como recogido» borra el PIN. Pendiente: recordatorio por notificación antes de que caduque (necesita las claves VAPID y una tarea programada) y rellenar punto y fecha desde el seguimiento automático.
 - Estado `listo_para_recoger` con ubicación, PIN y fecha límite (por ejemplo, Citypaq da 5 días naturales).
 - Recordatorio antes de que caduque y vista "para recoger hoy".
 - PIN cifrado en la base de datos y borrado al marcar el paquete como recogido.
