@@ -247,7 +247,7 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
   .n b{font-size:14px}
 }
 
-/* ---- Fondo: papel punteado en la página; mini-escena «tienda → paquete → casa» en la cabecera del listado ---- */
+/* ---- Fondo: papel punteado en la página ---- */
 .hero{position:relative}
 .wrap{position:relative;z-index:1}
 body{position:relative}
@@ -258,9 +258,4 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 @media (min-width:760px){
 }
 
-.escena{position:absolute;z-index:1;right:14px;top:68px;width:142px;pointer-events:none}
-.escena svg{display:block;width:100%;height:auto;overflow:visible}
-@media (min-width:760px){
-  .escena{right:calc(max(32px,(100% - 1120px)/2) + 235px);top:96px;width:250px}
-}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}

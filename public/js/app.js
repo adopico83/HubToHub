@@ -96,7 +96,7 @@ const TABS = [
 const tabsHTML = (activa, lugar) => `<nav class="tabs tabs-${lugar}" aria-label="Secciones">${TABS.map(([id, href, nombre, icono]) =>
   `<a href="${href}" ${id === activa ? 'aria-current="page"' : ''}>${icono}<span>${nombre}</span></a>`).join('')}</nav>`;
 
-function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquetes', compacto = false, escena = false }) {
+function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquetes', compacto = false }) {
   $app.innerHTML = `
     <header class="hero${compacto ? ' compacto' : ''}"><div class="wrap">
       <div class="top">
@@ -112,7 +112,7 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
         </div>
         ${accion || ''}
       </div>
-    </div>${escena ? `<div class="escena">${escenaHTML()}</div>` : ''}</header>
+    </div></header>
     <main>${contenido}</main>
     ${tabsHTML(tab, 'bottom')}`;
   document.title = `${titulo} · HubToHub`;
@@ -120,27 +120,10 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
   window.scrollTo(0, 0);
 }
 
-/* ---------- mini-escena de la cabecera: un paquete viaja de la tienda a casa ---------- */
-const ARCO = 'M33 35C55 1 103 1 125 35';
-function escenaHTML() {
-  const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const caja = `<g ${quieto ? 'transform="translate(79 13)"' : ''}>
-      <polygon points="0,-8 8,-3.5 0,1 -8,-3.5" fill="#FFE08A"/><polygon points="-8,-3.5 0,1 0,10 -8,5.5" fill="#F0B64E"/><polygon points="0,1 8,-3.5 8,5.5 0,10" fill="#E8663A"/>
-      ${quieto ? '' : `<animateMotion dur="7s" repeatCount="indefinite" path="${ARCO}" keyPoints="0;0;1;1" keyTimes="0;.14;.86;1" calcMode="linear"/>`}
-    </g>`;
-  return `<svg viewBox="0 0 158 52" fill="none" aria-hidden="true">
-    <path d="${ARCO}" stroke="#E8663A" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="0.1 7"/>
-    <g stroke="#F7F0E3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".85">
-      <g transform="translate(3 17) scale(1.1)"><path d="M3 9l1.5-5h15L21 9H3zM4.5 9v11h15V9M10 20v-6h4v6"/></g>
-      <g transform="translate(129 17) scale(1.1)"><path d="M3 11L12 3l9 8M5 10v10h14V10M10 20v-5h4v5"/></g>
-    </g>
-    ${caja}</svg>`;
-}
-
 /* ---------- listado ---------- */
 async function vistaListado() {
   layout({
-    eyebrow: 'Panel de envíos', titulo: 'Paquetes', sub: 'Todo lo que compras, recoges y envías.', escena: true,
+    eyebrow: 'Panel de envíos', titulo: 'Paquetes', sub: 'Todo lo que compras, recoges y envías.',
     accion: `<a class="btn" href="#/nuevo">${ICON.plus}Nuevo paquete</a>`, compacto: true,
     contenido: '<p class="empty glass">Cargando…</p>',
   });
