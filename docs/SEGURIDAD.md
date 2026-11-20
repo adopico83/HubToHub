@@ -10,11 +10,13 @@
 | Terceros | Tipografías alojadas en `/fonts`: el navegador ya no contacta con Google. |
 | Datos en tránsito/caché | Las respuestas de la API llevan `Cache-Control: no-store`; el service worker no cachea la API. |
 | Abuso | Límite por usuario (240/min) y por IP sin sesión (30/min) en `lib/limite.js`; cuerpo JSON máximo de 100 KB. Es por instancia serverless: frena abusos, no es un límite global exacto. |
+| PIN de recogida | Cifrado AES-256-GCM en el servidor (`lib/pin.js`, clave `PIN_CLAVE`), ligado a su dueño; nunca sale en listados ni notificaciones, solo al abrir el paquete; se borra al marcarlo como recogido (también si lo hace el seguimiento) y no entra en la descarga de datos. |
 | Derechos RGPD | `GET /cuenta` (descargar mis datos, portabilidad) y `DELETE /cuenta` (borrar paquetes, historial, avisos y la cuenta de `auth.users`, en una transacción, confirmando con el correo). |
 | Información | Política de privacidad y términos, enlazados desde el registro y desde Ajustes. |
 | Región | La base de datos está en `eu-west-1` (Irlanda); las funciones se fijan a `dub1` (Dublín) en `vercel.json`. |
 
 ## Pendiente (lo haces tú, en los paneles)
+0. **Crear `PIN_CLAVE` en Vercel** (Settings → Environment Variables): ejecuta `npm run pin:clave` y copia el valor. Sin ella la app funciona, pero no deja guardar PIN. No la pierdas ni la cambies: los PIN guardados dejarían de leerse.
 1. ~~Rellenar el titular y el correo de contacto en las páginas legales~~ (hecho: Andrés Dopico, `adopico83@hotmail.com`). Si algún día cambia el correo, hay que actualizarlo en `public/privacidad.html` y `public/terminos.html`.
 2. **Probar «Eliminar mi cuenta» contra Supabase** con una cuenta de prueba tras el despliegue: el borrado de `auth.users` solo está probado en local con un esquema simulado.
 3. Supabase → Authentication: contraseña mínima de 8 o más y exigir complejidad; activar la protección contra contraseñas filtradas (plan Pro); valorar CAPTCHA en el registro y un SMTP propio (el de pruebas de Supabase tiene un límite bajo de correos).

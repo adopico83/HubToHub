@@ -24,8 +24,10 @@ Objetivo: un panel único (móvil primero) que sigue por sí solo todos tus paqu
 - Avisos por correo, notificación web o Telegram.
 - **Por verificar:** condiciones de acceso de cada paquetería (API oficial, contrato, scraping permitido o no).
 
-## Resolver una incidencia (pendiente de planificar)
-Hoy una incidencia solo se muestra (estado rojo y Hubi preocupado). Falta poder actuar desde la propia ficha del paquete:
+## Resolver una incidencia
+> Estado: **primera versión hecha**. El detalle de un paquete con incidencia tiene la tarjeta «Resolver incidencia»: enlaces oficiales de la paquetería (solo Correos, MRW y Amazon, comprobados en sus webs el 20/11/2026), botón para copiar el nº de seguimiento, mensaje de reclamación prellenado con el motivo editable y seguimiento de la gestión (sin reclamar, abierta, respondida, resuelta) con aviso a los 3 días sin respuesta, también en el listado. Pendiente: comprobar en sus webs oficiales los datos de SEUR, GLS, InPost, Correos Express, Nacex, CTT y DHL (varias bloquean el acceso automático o cambian de dirección) y, si se quiere, teléfonos. Los datos viven en `public/js/paqueterias.js`; no se añade nada sin comprobarlo.
+
+Planteamiento original: hoy una incidencia solo se mostraba (estado rojo y Hubi preocupado). Se quería poder actuar desde la propia ficha del paquete:
 - Botón «Resolver incidencia» en el detalle de un paquete con estado `incidencia`, con acceso directo a la mensajería: la página oficial de seguimiento y de atención al cliente de la paquetería, con el número de seguimiento ya copiado o puesto en el enlace.
 - Teléfono y formulario de contacto de cada paquetería (Correos, SEUR, GLS, InPost, Amazon Logistics…), guardados en una tabla de datos por paquetería para poder actualizarlos sin tocar el código.
 - Mensaje de reclamación prellenado (remitente, fecha, número de seguimiento y motivo) para copiarlo o enviarlo por correo.
@@ -40,6 +42,7 @@ Hoy una incidencia solo se muestra (estado rojo y Hubi preocupado). Falta poder 
 - **Límite:** un servidor no puede leer tus SMS. Opciones: reenviar los SMS al correo o a Telegram con una app en el móvil, o pegar el aviso a mano.
 
 ## Fase 4 – Lockers y puntos de recogida (el hueco diferencial)
+> Estado: **hecho a mano**. Cada paquete listo para recoger guarda punto de recogida, fecha límite y PIN (cifrado con AES-256-GCM, clave en `PIN_CLAVE`); el listado destaca «Para recoger» con lo que caduca antes, y «Marcar como recogido» borra el PIN. Pendiente: recordatorio por notificación antes de que caduque (necesita las claves VAPID y una tarea programada) y rellenar punto y fecha desde el seguimiento automático.
 - Estado `listo_para_recoger` con ubicación, PIN y fecha límite (por ejemplo, Citypaq da 5 días naturales).
 - Recordatorio antes de que caduque y vista "para recoger hoy".
 - PIN cifrado en la base de datos y borrado al marcar el paquete como recogido.

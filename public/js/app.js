@@ -39,6 +39,41 @@ function diaTexto(iso) {
   const t = new Date(iso).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
+/* ---------- recogida en locker o punto: dónde, hasta cuándo y cuánto queda ---------- */
+const dosCifras = (n) => String(n).padStart(2, '0');
+const hoyISO = () => { const d = new Date(); return `${d.getFullYear()}-${dosCifras(d.getMonth() + 1)}-${dosCifras(d.getDate())}`; };
+/** Días que faltan para una fecha AAAA-MM-DD, con el calendario del dispositivo (negativo si ya pasó). */
+const diasHasta = (iso) => Math.round((Date.parse(iso + 'T00:00:00') - Date.parse(hoyISO() + 'T00:00:00')) / 86400000);
+
+/** Aviso de caducidad de un paquete listo para recoger: { dias, texto, nivel } o null si no tiene fecha límite. */
+function caducidad(p) {
+  if (p.estado !== 'listo_para_recoger' || !p.recoger_hasta) return null;
+  const d = diasHasta(p.recoger_hasta);
+  if (d < 0) return { dias: d, texto: `Caducó hace ${-d} ${-d === 1 ? 'día' : 'días'}`, nivel: 'caducado' };
+  if (d === 0) return { dias: d, texto: 'Caduca hoy', nivel: 'urgente' };
+  if (d === 1) return { dias: d, texto: 'Caduca mañana', nivel: 'urgente' };
+  if (d <= 3) return { dias: d, texto: `Caduca en ${d} días`, nivel: 'pronto' };
+  return { dias: d, texto: `Hasta el ${fechaES(p.recoger_hasta)}`, nivel: 'ok' };
+}
+const cadHTML = (c) => (c ? `<span class="cad cad-${c.nivel}">${esc(c.texto)}</span>` : '');
+/** Dónde recogerlo y cuándo caduca, en una línea (para las listas). */
+const recogidaLinea = (p) => (p.estado === 'listo_para_recoger' && (p.punto_recogida || p.recoger_hasta)
+  ? `<span class="recogida-linea">${p.punto_recogida ? `<span class="donde">${ICON.pin}${esc(p.punto_recogida)}</span>` : ''}${cadHTML(caducidad(p))}</span>` : '');
+/** Los que caducan antes, primero; los que no tienen fecha, al final. */
+const porCaducidad = (a, b) => (a.recoger_hasta || '9999-99-99').localeCompare(b.recoger_hasta || '9999-99-99') || a.id - b.id;
+
+/* ---------- reclamación de una incidencia ---------- */
+const GESTIONES = { abierta: 'Abierta', respondida: 'Respondida', resuelta: 'Resuelta' };
+const DIAS_SIN_RESPUESTA = 3; // pasado este tiempo con la reclamación abierta, se avisa de que conviene insistir
+const diasDesde = (iso) => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+/** Reclamación pendiente de respuesta (abierta o respondida), con el aviso de si lleva días sin contestación. */
+function gestionPendiente(p) {
+  if (p.gestion !== 'abierta' && p.gestion !== 'respondida') return null;
+  const dias = p.gestion_en ? diasDesde(p.gestion_en) : 0;
+  return { dias, sinRespuesta: p.gestion === 'abierta' && dias >= DIAS_SIN_RESPUESTA, texto: `Reclamación ${p.gestion}${p.gestion_en ? ' · ' + hace(p.gestion_en) : ''}` };
+}
+const gestionLinea = (p) => { const g = gestionPendiente(p); return g ? `<span class="recogida-linea"><span class="cad cad-${g.sinRespuesta ? 'urgente' : 'pronto'}">${esc(g.texto)}${g.sinRespuesta ? ' · sin respuesta' : ''}</span></span>` : ''; };
+
 const badge = (e) => `<span class="badge e-${e}">${ESTADOS[e] || esc(e)}</span>`;
 const ICON = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
@@ -48,6 +83,8 @@ const ICON = {
   actividad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
   ajustes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>',
   aviso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0112 0c0 6 2 7 2 7H4s2-1 2-7M10 20a2 2 0 004 0"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  candado: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
   sol: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
   luna: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></svg>',
   atras: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
@@ -277,6 +314,7 @@ async function vistaListado() {
     <section class="stats" aria-label="Resumen">
       ${stats.map(([e, l, n]) => `<button type="button" class="stat ${e ? 'e-' + e : 's-total'}" data-e="${e}" aria-pressed="${state.filtro === e}"><span>${l}</span><b>${n}</b></button>`).join('')}
     </section>
+    <div id="aviso-recoger"></div>
     <div class="search-bar">
       <div class="search">${ICON.search}<input type="search" id="q" aria-label="Buscar paquetes" placeholder="Buscar remitente, destinatario o seguimiento" value="${esc(state.q)}"></div>
       <div class="chips-wrap">
@@ -291,11 +329,26 @@ async function vistaListado() {
     <p class="count" id="count"></p>
     <a class="btn fab" href="#/nuevo" aria-label="Nuevo paquete">${ICON.plus}Nuevo</a>`;
 
+  /** Lo que hay que ir a recoger, lo más urgente primero. Se oculta cuando ya se está viendo ese filtro. */
+  const pintarAvisoRecoger = () => {
+    const caja = document.getElementById('aviso-recoger');
+    const listos = state.paquetes.filter((p) => p.estado === 'listo_para_recoger').sort(porCaducidad);
+    if (!listos.length || state.filtro === 'listo_para_recoger') { caja.innerHTML = ''; return; }
+    const urgentes = listos.filter((p) => { const c = caducidad(p); return c && c.dias <= 1; }).length;
+    caja.innerHTML = `<section class="glass aviso-recoger" aria-label="Para recoger">
+      <h2>${ICON.pin}Para recoger <b>${listos.length}</b>${urgentes ? `<span class="cad cad-urgente">${urgentes} ${urgentes === 1 ? 'caduca' : 'caducan'} hoy o mañana</span>` : ''}</h2>
+      <ul>${listos.slice(0, 3).map((p) => `<li><a href="#/paquete/${p.id}"><span class="q-nombre">${esc(p.direccion === 'enviado' ? p.destinatario : p.remitente)}</span>${recogidaLinea(p) || '<span class="muted">Sin punto ni fecha</span>'}</a></li>`).join('')}</ul>
+      ${listos.length > 3 ? `<button type="button" class="enlace" id="ver-recoger">Ver los ${listos.length}</button>` : ''}
+    </section>`;
+    document.getElementById('ver-recoger')?.addEventListener('click', () => { state.filtro = 'listo_para_recoger'; pintar(); });
+  };
   const pintar = () => {
+    pintarAvisoRecoger();
     const q = state.q.trim().toLowerCase();
     const lista = state.paquetes.filter((p) =>
       (!state.filtro || p.estado === state.filtro) &&
-      (!q || [p.remitente, p.destinatario, p.numero_seguimiento].some((v) => (v || '').toLowerCase().includes(q))));
+      (!q || [p.remitente, p.destinatario, p.numero_seguimiento, p.punto_recogida].some((v) => (v || '').toLowerCase().includes(q))));
+    if (state.filtro === 'listo_para_recoger') lista.sort(porCaducidad); // «para recoger»: lo que caduca antes, arriba
     document.getElementById('lista').innerHTML = lista.length
       ? lista.map(filaHTML).join('')
       : '<li class="empty glass">No hay paquetes que coincidan.</li>';
@@ -340,7 +393,7 @@ function filaHTML(p, i) {
     <div class="avatar" style="--c:${AVATARES[p.id % AVATARES.length]}" aria-hidden="true">${esc(iniciales(nombre))}</div>
     <div class="who">${esc(nombre)}<small>#${p.id}</small></div>
     ${badge(p.estado)}
-    <div class="meta">${p.direccion === 'enviado' ? 'Enviado' : 'Recibido'} · ${fechaES(p.fecha)}${p.paqueteria ? ' · ' + esc(p.paqueteria) : ''}</div>
+    <div class="meta">${p.direccion === 'enviado' ? 'Enviado' : 'Recibido'} · ${fechaES(p.fecha)}${p.paqueteria ? ' · ' + esc(p.paqueteria) : ''}${recogidaLinea(p)}${gestionLinea(p)}</div>
     <div class="extra peso">${pesoES(p.peso)} kg</div>
     <div class="extra seg">${esc(p.numero_seguimiento || 'Sin seguimiento')}</div>
   </a></li>`;
@@ -365,6 +418,55 @@ function etapaActual(p, eventos, etapas) {
  * Con el seguimiento automático (fase 2) devolverá, por ejemplo, las paradas que faltan para llegar.
  */
 const avanceEnEtapa = () => 0;
+
+/** Tarjeta «Resolver incidencia»: contacto con la paquetería, mensaje de reclamación y seguimiento de la gestión. */
+function incidenciaHTML(p, eventos) {
+  if (p.estado !== 'incidencia' && !p.gestion) return '';
+  const paq = paqueteriaDe(p.paqueteria);
+  const ultimo = [...eventos].reverse().find((e) => e.estado === 'incidencia' && e.detalle);
+  const g = gestionPendiente(p);
+  const nombre = paq?.nombre || p.paqueteria || 'la paquetería';
+  const enlaces = paq
+    ? paq.enlaces.map((e) => `<a class="btn ghost-d" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">${esc(e.etiqueta)}</a>`).join('')
+    : '';
+  return `<section class="glass card gestion-card" aria-label="Resolver incidencia"><h2>${ICON.aviso}Resolver incidencia</h2>
+    <h3>1 · Contacta con ${esc(nombre)}</h3>
+    ${paq ? `<p class="muted">Enlaces oficiales (comprobados el ${fechaES(paq.verificado)}). Ten a mano el número de seguimiento.</p>`
+          : `<p class="muted">Aún no tengo comprobados los datos de contacto de ${p.paqueteria ? '«' + esc(p.paqueteria) + '»' : 'esta paquetería'}. Búscalos en su web oficial y ten a mano el número de seguimiento.</p>`}
+    <div class="actions">${enlaces}${p.numero_seguimiento ? '<button class="btn ghost-d" id="copiar-num" type="button">Copiar nº de seguimiento</button>' : ''}</div>
+    <h3>2 · Mensaje de reclamación</h3>
+    <div class="field"><label for="motivo">Qué ha pasado</label>
+      <input id="motivo" type="text" maxlength="200" value="${esc(ultimo?.detalle || '')}" placeholder="${esc(MOTIVO_POR_DEFECTO)}"></div>
+    <textarea id="mensaje" class="mensaje" rows="13" readonly aria-label="Mensaje de reclamación">${esc(mensajeReclamacion(p, ultimo?.detalle))}</textarea>
+    <div class="actions"><button class="btn blue" id="copiar-msg" type="button">Copiar mensaje</button></div>
+    <h3>3 · Estado de la gestión</h3>
+    <div class="seg" id="gestion" role="group" aria-label="Estado de la reclamación">
+      ${[['', 'Sin reclamar'], ...Object.entries(GESTIONES)].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${(p.gestion || '') === k}">${v}</button>`).join('')}
+    </div>
+    ${g ? `<p class="aviso ${g.sinRespuesta ? 'mal' : 'bien'}">${esc(g.texto)}${g.sinRespuesta ? `: llevas ${g.dias} días sin respuesta. Conviene insistir por el mismo canal o escalar la reclamación.` : '.'}</p>` : ''}
+    ${p.gestion === 'resuelta' ? '<p class="aviso bien">Reclamación resuelta.</p>' : ''}
+  </section>`;
+}
+
+/** Tarjeta «Recogida»: dónde, hasta cuándo y el PIN (oculto hasta que se pide verlo). Solo con el paquete listo para recoger. */
+function recogidaHTML(p, cfg) {
+  if (p.estado !== 'listo_para_recoger') return '';
+  const c = caducidad(p);
+  const pinBloque = p.pin
+    ? `<div class="pin"><div><dt>PIN</dt><output id="pin-valor" aria-live="polite">${'•'.repeat(Math.min(p.pin.length, 8))}</output></div>
+        <div class="pin-botones"><button class="btn ghost-d" id="pin-ver" type="button">Mostrar</button><button class="btn ghost-d" id="pin-copiar" type="button">Copiar</button></div></div>`
+    : p.tiene_pin
+      ? '<p class="muted pin-nota">No se puede leer el PIN guardado (la clave de cifrado del servidor ha cambiado). Vuelve a escribirlo en «Editar».</p>'
+      : `<p class="muted pin-nota">${cfg.pin ? 'Aún no has guardado el PIN. Lo guardamos cifrado y lo borramos al marcarlo como recogido.' : 'El servidor aún no tiene activado el guardado de PIN.'}</p>`;
+  return `<section class="glass card recogida-card" aria-label="Recogida"><h2>${ICON.pin}Recogida</h2>
+    <dl class="kv">
+      <div><dt>Dónde</dt><dd>${esc(p.punto_recogida || '—')}</dd></div>
+      <div><dt>Hasta</dt><dd>${p.recoger_hasta ? fechaES(p.recoger_hasta) : '—'} ${cadHTML(c)}</dd></div>
+    </dl>
+    ${pinBloque}
+    <div class="actions"><button class="btn blue" id="recogido" type="button">Marcar como recogido</button><a class="btn ghost-d" href="#/editar/${p.id}">Editar datos de recogida</a></div>
+  </section>`;
+}
 
 function seguimientoHTML(p, eventos) {
   const etapas = etapasDe(p, eventos);
@@ -420,6 +522,8 @@ async function vistaDetalle(id) {
     eyebrow: p.direccion === 'enviado' ? 'Envío' : 'Recepción', titulo: `Paquete #${p.id}`, sub: badgeText(p), volver: [ultimaLista, 'Volver'], mascota: `estado:${p.estado}`,
     contenido: `
       <section class="glass card" aria-label="Seguimiento"><h2>Seguimiento</h2>${seguimientoHTML(p, eventos)}</section>
+      ${incidenciaHTML(p, eventos)}
+      ${recogidaHTML(p, cfg)}
       <div class="grid2">
         <section class="glass card" aria-label="Datos">
           <div class="route">
@@ -458,6 +562,47 @@ async function vistaDetalle(id) {
     } catch { toast('No se pudo conectar con la API', true); }
     ev.target.disabled = false;
     ev.target.textContent = 'Actualizar ahora';
+  });
+  // PIN: oculto por defecto; «Mostrar» lo enseña unos segundos y «Copiar» lo lleva al portapapeles sin mostrarlo.
+  const pinValor = document.getElementById('pin-valor');
+  if (pinValor && p.pin) {
+    let temporizador;
+    const ocultar = () => { clearTimeout(temporizador); pinValor.textContent = '•'.repeat(Math.min(p.pin.length, 8)); document.getElementById('pin-ver').textContent = 'Mostrar'; };
+    document.getElementById('pin-ver').addEventListener('click', () => {
+      if (pinValor.textContent === p.pin) return ocultar();
+      pinValor.textContent = p.pin;
+      document.getElementById('pin-ver').textContent = 'Ocultar';
+      temporizador = setTimeout(ocultar, 20_000);
+    });
+    document.getElementById('pin-copiar').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(p.pin); toast('PIN copiado'); } catch { toast('No se pudo copiar: pulsa «Mostrar»', true); }
+    });
+  }
+  // Resolver incidencia: copiar, mensaje con el motivo escrito y estado de la gestión.
+  const copiar = async (texto, aviso) => { try { await navigator.clipboard.writeText(texto); toast(aviso); } catch { toast('No se pudo copiar', true); } };
+  document.getElementById('copiar-num')?.addEventListener('click', () => copiar(p.numero_seguimiento, 'Nº de seguimiento copiado'));
+  const msg = document.getElementById('mensaje');
+  document.getElementById('motivo')?.addEventListener('input', (e) => { msg.value = mensajeReclamacion(p, e.target.value); });
+  document.getElementById('copiar-msg')?.addEventListener('click', () => copiar(msg.value, 'Mensaje copiado'));
+  document.getElementById('gestion')?.addEventListener('click', async (ev) => {
+    const b = ev.target.closest('button');
+    if (!b || b.getAttribute('aria-pressed') === 'true') return;
+    $app.querySelectorAll('#gestion button').forEach((x) => { x.disabled = true; });
+    try {
+      const res = await api('/' + p.id, { method: 'PUT', body: { gestion: b.dataset.v } });
+      if (res.code !== 200) { toast(res.message, true); return vistaDetalle(id); }
+      toast(b.dataset.v ? `Reclamación: ${GESTIONES[b.dataset.v].toLowerCase()}` : 'Reclamación quitada');
+      vistaDetalle(id);
+    } catch { toast('No se pudo conectar con la API', true); vistaDetalle(id); }
+  });
+  document.getElementById('recogido')?.addEventListener('click', async (ev) => {
+    ev.currentTarget.disabled = true;
+    try {
+      const res = await api('/' + p.id, { method: 'PUT', body: { estado: 'entregado' } });
+      if (res.code !== 200) { toast(res.message, true); ev.currentTarget.disabled = false; return; }
+      toast(p.tiene_pin ? '¡Recogido! Hemos borrado el PIN' : '¡Recogido!');
+      vistaDetalle(id);
+    } catch { toast('No se pudo conectar con la API', true); ev.currentTarget.disabled = false; }
   });
   document.getElementById('cambiar').addEventListener('change', async (ev) => {
     ev.target.disabled = true;
@@ -630,6 +775,13 @@ async function vistaFormulario(id) {
         ${select('estado', 'Estado', ESTADOS)}</div>
         <div class="two">${campo('peso', 'Peso (kg)', 'text', 'inputmode="decimal" placeholder="0,0"')}
         ${campo('fecha', 'Fecha', 'date')}</div>
+        <div class="recogida-campos" id="recogida-campos" ${p.estado === 'listo_para_recoger' ? '' : 'hidden'}>
+          <h3>${ICON.pin}Recogida</h3>
+          ${campo('punto_recogida', 'Punto de recogida', 'text', 'placeholder="Locker InPost · C/ Mayor 12" maxlength="120"')}
+          <div class="two">${campo('recoger_hasta', 'Recoger antes del', 'date')}
+          ${campo('pin', 'PIN de recogida', 'text', `placeholder="${cfg.pin ? 'Ej. 482910' : 'No disponible'}" maxlength="24" autocomplete="off" autocapitalize="off" spellcheck="false" ${cfg.pin ? '' : 'disabled'}`)}</div>
+          <p class="muted pequeno">${cfg.pin ? 'El PIN se guarda cifrado y se borra al marcar el paquete como recogido.' : 'El servidor aún no tiene activado el guardado de PIN: puedes guardar el punto y la fecha.'}</p>
+        </div>
         <div class="two">${campo('paqueteria', 'Paquetería (opcional)', 'text', 'placeholder="Correos, GLS, InPost…" maxlength="60"')}
         ${campo('numero_seguimiento', 'Nº de seguimiento (opcional)', 'text', 'maxlength="60"')}</div>
         ${cfg.seguimiento ? `<label class="check"><input type="checkbox" name="seguimiento_auto" ${p.seguimiento_auto === false ? '' : 'checked'}><span>Consultar el seguimiento automáticamente<small>Con número de seguimiento, la app mira sola la paquetería y actualiza el estado.</small></span></label>` : ''}
@@ -638,6 +790,7 @@ async function vistaFormulario(id) {
   });
 
   const form = $app.querySelector('form');
+  form.estado.addEventListener('change', () => { document.getElementById('recogida-campos').hidden = form.estado.value !== 'listo_para_recoger'; });
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     form.querySelectorAll('.field').forEach((f) => { f.classList.remove('bad'); f.querySelector('.err').textContent = ''; });

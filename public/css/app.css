@@ -330,3 +330,45 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .enlace.peligro{color:color-mix(in srgb,var(--c-incidencia) 80%,var(--ink))}
 .borrar{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .borrar .actions{margin-top:12px}
+
+/* Recogida en locker o punto */
+[hidden]{display:none!important}
+.recogida-linea{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:6px}
+.donde{display:inline-flex;align-items:center;gap:5px;color:var(--ink);font-weight:600}
+.donde svg{width:15px;height:15px;flex:none;color:var(--c-listo_para_recoger)}
+.cad{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;
+  background:color-mix(in srgb,var(--c-listo_para_recoger) 15%,var(--surface));color:color-mix(in srgb,var(--c-listo_para_recoger) 70%,var(--ink))}
+.cad-pronto{background:color-mix(in srgb,var(--c-pendiente) 18%,var(--surface));color:color-mix(in srgb,var(--c-pendiente) 80%,var(--ink))}
+.cad-urgente,.cad-caducado{background:color-mix(in srgb,var(--c-incidencia) 16%,var(--surface));color:color-mix(in srgb,var(--c-incidencia) 78%,var(--ink))}
+.aviso-recoger{margin:16px 0 12px;padding:16px 18px;border-color:color-mix(in srgb,var(--c-listo_para_recoger) 55%,var(--line))}
+.aviso-recoger h2{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 10px;font:700 16px var(--f-body)}
+.aviso-recoger h2 svg{width:20px;height:20px;color:var(--c-listo_para_recoger)}
+.aviso-recoger h2 b{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:99px;background:var(--c-listo_para_recoger);color:#fff;font-size:13px}
+.aviso-recoger ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.aviso-recoger li a{display:block;padding:8px 0;text-decoration:none;color:inherit;border-top:1px solid var(--line)}
+.aviso-recoger li:first-child a{border-top:0}
+.aviso-recoger .q-nombre{font-weight:700}
+.recogida-card{margin-top:16px}
+.recogida-card h2{display:flex;align-items:center;gap:8px}
+.recogida-card h2 svg{width:22px;height:22px;color:var(--c-listo_para_recoger)}
+.pin{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.pin dt{display:block;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.pin output{display:block;margin-top:4px;font:700 32px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.16em}
+.pin-botones{display:flex;gap:8px}
+.pin-botones .btn,.recogida-card .actions .btn{min-height:44px}
+.pin-nota{margin:16px 0 0}
+.recogida-card .actions{margin-top:18px}
+.recogida-campos{margin:6px 0 4px;padding:14px 16px 4px;border:1px dashed color-mix(in srgb,var(--c-listo_para_recoger) 55%,var(--line));border-radius:12px;display:grid;gap:14px}
+.recogida-campos h3{display:flex;align-items:center;gap:8px;margin:0;font:700 15px var(--f-body)}
+.recogida-campos h3 svg{width:18px;height:18px;color:var(--c-listo_para_recoger)}
+
+/* Resolver incidencia */
+.gestion-card{margin-top:16px}
+.gestion-card h2{display:flex;align-items:center;gap:8px}
+.gestion-card h2 svg{width:22px;height:22px;color:var(--c-incidencia)}
+.gestion-card h3{margin:22px 0 6px;font:700 15px var(--f-body)}
+.gestion-card h3:first-of-type{margin-top:4px}
+.gestion-card .actions{margin-top:12px}
+.gestion-card .actions .btn{min-height:44px}
+.mensaje{width:100%;margin-top:4px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:400 14px/1.5 var(--f-body);resize:vertical}
+.gestion-card .aviso{margin-top:12px}
