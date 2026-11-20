@@ -88,15 +88,40 @@ document.addEventListener('click', (ev) => {
 
 /* ---------- Hubi en la cabecera: cada vez que se abre el listado sale una pose distinta (nunca la misma dos veces seguidas) ---------- */
 const POSES_HUBI = { tranquilo: [192, 420], senalando: [268, 420], saluda: [261, 420], pulgar: [232, 420], gorra: [322, 420] };
-const POSE_BICI = [254, 420]; // Hubi en bici: se muestra en el detalle de un paquete «en reparto»
-const ALTO_HUBI_MOVIL = { rotacion: 108, bici: 128 }; // px; deben coincidir con .hubi y .hubi.bici en app.css
-const medidasHubi = (pose) => (pose === 'bici' ? POSE_BICI : POSES_HUBI[pose]);
+// Pose de Hubi en el detalle de un paquete, según su estado: [nombre del archivo, ancho, alto].
+const POSES_ESTADO = {
+  pendiente: ['reloj', 211, 420],
+  en_reparto: ['bici', 254, 420],
+  listo_para_recoger: ['taquilla', 328, 420],
+  entregado: ['entregado', 311, 420],
+  incidencia: ['sorprendido', 220, 420],
+};
+const ALTO_HUBI_MOVIL = { rotacion: 108, estado: 128 }; // px; deben coincidir con .hubi y .hubi.estado en app.css
+/** Archivo, ancho y alto de la pose: «estado:<estado>» para el detalle, o el nombre de una pose de la rotación. */
+function medidasHubi(pose) {
+  if (pose.startsWith('estado:')) return POSES_ESTADO[pose.slice(7)];
+  return [pose, ...POSES_HUBI[pose]];
+}
 function elegirHubi() {
   const anterior = guardado('hubi', '');
   const candidatas = Object.keys(POSES_HUBI).filter((n) => n !== anterior);
   const nombre = candidatas[Math.floor(Math.random() * candidatas.length)];
   guardar('hubi', nombre);
   return nombre;
+}
+
+/** Confeti corto en la cabecera de un paquete entregado. Solo con movimiento permitido; dura unos 3 s y se borra. */
+function lanzarConfeti() {
+  const caja = document.querySelector('.confeti');
+  if (!caja || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colores = ['#E8663A', '#F0B64E', '#F7F0E3', '#C98A4B'];
+  caja.innerHTML = Array.from({ length: 26 }, (_, i) => {
+    const x = Math.round(Math.random() * 100), r = Math.round(Math.random() * 360);
+    const retraso = (Math.random() * 0.9).toFixed(2), dur = (1.8 + Math.random() * 1.4).toFixed(2);
+    const ancho = 5 + Math.round(Math.random() * 5);
+    return `<i style="left:${x}%;width:${ancho}px;height:${Math.round(ancho * 1.6)}px;background:${colores[i % colores.length]};--r:${r}deg;animation-delay:${retraso}s;animation-duration:${dur}s"></i>`;
+  }).join('');
+  setTimeout(() => caja.replaceChildren(), 4200);
 }
 
 /* ---------- estructura común ---------- */
@@ -110,11 +135,13 @@ const tabsHTML = (activa, lugar) => `<nav class="tabs tabs-${lugar}" aria-label=
   `<a href="${href}" ${id === activa ? 'aria-current="page"' : ''}>${icono}<span>${nombre}</span></a>`).join('')}</nav>`;
 
 function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquetes', compacto = false, mascota = false }) {
-  // mascota: true = una pose de la rotación; 'bici' = Hubi en bici.
+  // mascota: true = una pose de la rotación (listado); 'estado:<estado>' = la pose de ese estado (detalle).
   const hubi = mascota === true ? elegirHubi() : mascota || null;
-  const altoMovil = hubi === 'bici' ? ALTO_HUBI_MOVIL.bici : ALTO_HUBI_MOVIL.rotacion;
+  const medidas = hubi ? medidasHubi(hubi.startsWith('estado:') ? hubi : hubi) : null;
+  const esEstado = Boolean(hubi && hubi.startsWith('estado:'));
+  const altoMovil = esEstado ? ALTO_HUBI_MOVIL.estado : ALTO_HUBI_MOVIL.rotacion;
   $app.innerHTML = `
-    <header class="hero${compacto ? ' compacto' : ''}${hubi ? ' conhubi' : ''}" ${hubi ? `style="--hubi-w:${Math.round(altoMovil * medidasHubi(hubi)[0] / medidasHubi(hubi)[1])}px"` : ''}><div class="wrap">
+    <header class="hero${compacto ? ' compacto' : ''}${hubi ? ' conhubi' : ''}" ${hubi ? `style="--hubi-w:${Math.round(altoMovil * medidas[1] / medidas[2])}px"` : ''}><div class="wrap">
       <div class="top">
         <a class="brand" href="#/" aria-label="HubToHub, inicio"><span class="marca">${MARCA}</span><span>Hub<b>To</b>Hub</span></a>
         <div class="top-right">${tabsHTML(tab, 'top')}<button class="tema" id="tema" type="button"></button></div>
@@ -128,9 +155,10 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
         </div>
         ${accion || ''}
       </div>
-    </div>${hubi ? `<img class="hubi${hubi === 'bici' ? ' bici' : ''}" src="/img/hubi/hubi-${hubi}.webp" alt="" width="${medidasHubi(hubi)[0]}" height="${medidasHubi(hubi)[1]}">` : ''}</header>
+    </div>${hubi ? `<img class="hubi${esEstado ? ' estado' : ''}" src="/img/hubi/hubi-${medidas[0]}.webp" alt="" width="${medidas[1]}" height="${medidas[2]}">` : ''}${hubi === 'estado:entregado' ? '<div class="confeti" aria-hidden="true"></div>' : ''}</header>
     <main>${contenido}</main>
     ${tabsHTML(tab, 'bottom')}`;
+  if (hubi === 'estado:entregado') lanzarConfeti();
   document.title = `${titulo} · HubToHub`;
   aplicarTema();
   window.scrollTo(0, 0);
@@ -272,7 +300,7 @@ async function vistaDetalle(id) {
   const eventos = p.eventos || [];
 
   layout({
-    eyebrow: p.direccion === 'enviado' ? 'Envío' : 'Recepción', titulo: `Paquete #${p.id}`, sub: badgeText(p), volver: ['#/', 'Listado'], mascota: p.estado === 'en_reparto' ? 'bici' : false,
+    eyebrow: p.direccion === 'enviado' ? 'Envío' : 'Recepción', titulo: `Paquete #${p.id}`, sub: badgeText(p), volver: ['#/', 'Listado'], mascota: `estado:${p.estado}`,
     contenido: `
       <section class="glass card" aria-label="Seguimiento"><h2>Seguimiento</h2>${seguimientoHTML(p, eventos)}</section>
       <div class="grid2">

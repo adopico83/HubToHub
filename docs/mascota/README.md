@@ -15,16 +15,21 @@ Cada vez que se abre «Paquetes» sale una pose distinta, nunca la misma dos vec
 
 Las cinco comparten escala y línea de los pies (mismo recorte vertical), así que al cambiar de una a otra no «saltan». Para añadir una pose: recórtala con la misma franja, guárdala en `public/img/hubi/`, añádela a `POSES_HUBI` en `public/js/app.js` (con su ancho y alto) y al `SHELL` de `public/sw.js`.
 
-## Detalle de un paquete en reparto
-| Archivo | Pose | Dónde |
-| --- | --- | --- |
-| `hubi-bici.webp` | Pedalea con una caja en la cesta y saluda | Cabecera del detalle, solo si el estado es «en reparto» (`public/img/hubi/`) |
+## Detalle de un paquete: una pose por estado
+La cabecera del detalle muestra la pose de su estado (`POSES_ESTADO` en `public/js/app.js`; imágenes en `public/img/hubi/`). Al entrar en un paquete **entregado** cae un confeti corto (unos 3 s, dibujado con CSS; no se muestra si el dispositivo pide «reducir movimiento»).
 
-## Reservadas para estados (aún sin usar)
+| Estado | Archivo | Pose |
+| --- | --- | --- |
+| Pendiente | `hubi-reloj.webp` | Mira su reloj de pulsera, con una caja bajo el brazo |
+| En reparto | `hubi-bici.webp` | Pedalea con una caja en la cesta y saluda |
+| Para recoger | `hubi-taquilla.webp` | Abre la puerta de una taquilla con la caja en la otra mano |
+| Entregado | `hubi-entregado.webp` | Salta de alegría desde dentro de una caja abierta |
+| Incidencia | `hubi-sorprendido.webp` | Sorprendido, con la caja en brazos (provisional; se sustituirá por una mejor) |
+
+## Reservadas (aún sin usar)
 | Archivo | Expresión | Uso previsto |
 | --- | --- | --- |
-| `hubi-feliz.webp` | Saluda con una caja en alto | Paquete entregado, lista vacía |
-| `hubi-sorprendido.webp` | Sorprendido, con la caja en brazos | Incidencia |
+| `hubi-feliz.webp` | Saluda con una caja en alto | Lista vacía |
 | `hubi-enfadado.webp` | Brazos cruzados | Sin movimiento, error |
 
 ## Paleta
