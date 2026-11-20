@@ -96,7 +96,7 @@ const TABS = [
 const tabsHTML = (activa, lugar) => `<nav class="tabs tabs-${lugar}" aria-label="Secciones">${TABS.map(([id, href, nombre, icono]) =>
   `<a href="${href}" ${id === activa ? 'aria-current="page"' : ''}>${icono}<span>${nombre}</span></a>`).join('')}</nav>`;
 
-function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquetes', compacto = false }) {
+function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquetes', compacto = false, mascota = false }) {
   $app.innerHTML = `
     <header class="hero${compacto ? ' compacto' : ''}"><div class="wrap">
       <div class="top">
@@ -112,7 +112,7 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
         </div>
         ${accion || ''}
       </div>
-    </div></header>
+    </div>${mascota ? '<img class="hubi" src="/img/hubi-feliz.webp" alt="" width="284" height="420">' : ''}</header>
     <main>${contenido}</main>
     ${tabsHTML(tab, 'bottom')}`;
   document.title = `${titulo} · HubToHub`;
@@ -123,7 +123,7 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
 /* ---------- listado ---------- */
 async function vistaListado() {
   layout({
-    eyebrow: 'Panel de envíos', titulo: 'Paquetes', sub: 'Todo lo que compras, recoges y envías.',
+    eyebrow: 'Panel de envíos', titulo: 'Paquetes', sub: 'Todo lo que compras, recoges y envías.', mascota: true,
     accion: `<a class="btn" href="#/nuevo">${ICON.plus}Nuevo paquete</a>`, compacto: true,
     contenido: '<p class="empty glass">Cargando…</p>',
   });
