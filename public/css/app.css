@@ -266,7 +266,13 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 :root[data-tema=oscuro] body::before{opacity:.4}
 /* Hubi (prueba): asoma por el borde inferior de la cabecera del listado */
 .hubi{position:absolute;z-index:2;right:12px;bottom:-14px;height:108px;width:auto;pointer-events:none}
-.hubi.bici{height:128px}
+.hubi.estado{height:128px}
 @media (max-width:759px){.hero.conhubi .sub{max-width:calc(100vw - 40px - var(--hubi-w,70px))}}
-@media (min-width:760px){.hubi{left:50%;right:auto;transform:translateX(-50%);bottom:-20px;height:200px}.hubi.bici{height:216px}}
+@media (min-width:760px){.hubi{left:50%;right:auto;transform:translateX(-50%);bottom:-20px;height:200px}.hubi.estado{height:216px}
+  .hero.conhubi .sub{max-width:calc(50vw - 106px - max(32px,(100vw - 1120px)/2))}
+  .confeti{top:88px}}
+/* Confeti de «entregado»: cae dentro de la cabecera, una sola vez */
+.confeti{position:absolute;inset:72px 0 0;overflow:hidden;pointer-events:none;z-index:0}
+.confeti i{position:absolute;top:-14px;border-radius:1px;opacity:0;animation:cae linear 1 forwards}
+@keyframes cae{0%{opacity:0;transform:translateY(0) rotate(var(--r))}12%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateY(190px) rotate(calc(var(--r) + 540deg))}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
