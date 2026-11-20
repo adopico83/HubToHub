@@ -87,14 +87,14 @@ document.addEventListener('click', (ev) => {
 });
 
 /* ---------- Hubi en la cabecera: cada vez que se abre el listado sale una pose distinta (nunca la misma dos veces seguidas) ---------- */
-const POSES_HUBI = { tranquilo: [192, 420], senalando: [268, 420], saluda: [261, 420], pulgar: [232, 420], gorra: [322, 420] };
+const POSES_HUBI = { tranquilo: [192, 420], senalando: [268, 420], saluda: [261, 420], pulgar: [232, 420], gorra: [322, 420], feliz: [284, 420], sorprendido: [220, 420], enfadado: [215, 420] };
 // Pose de Hubi en el detalle de un paquete, según su estado: [nombre del archivo, ancho, alto].
 const POSES_ESTADO = {
   pendiente: ['reloj', 211, 420],
   en_reparto: ['bici', 254, 420],
   listo_para_recoger: ['taquilla', 328, 420],
   entregado: ['entregado', 311, 420],
-  incidencia: ['sorprendido', 220, 420],
+  incidencia: ['incidencia', 296, 420],
 };
 const ALTO_HUBI_MOVIL = { rotacion: 108, estado: 128 }; // px; deben coincidir con .hubi y .hubi.estado en app.css
 /** Archivo, ancho y alto de la pose: «estado:<estado>» para el detalle, o el nombre de una pose de la rotación. */
