@@ -40,6 +40,7 @@ const ICON = {
   aviso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0112 0c0 6 2 7 2 7H4s2-1 2-7M10 20a2 2 0 004 0"/></svg>',
   sol: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
   luna: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></svg>',
+  atras: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
   flecha: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
   search: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
 };
@@ -195,6 +196,9 @@ function lanzarConfeti() {
   setTimeout(() => caja.replaceChildren(), 4200);
 }
 
+/** Última lista abierta (Paquetes o Actividad): a ella lleva «Volver» desde el detalle de un paquete. */
+let ultimaLista = '#/';
+
 /* ---------- estructura común ---------- */
 const MARCA = '<svg viewBox="0 0 1210 1000" aria-hidden="true"><path class="l2" d="M1208 1H924L853 232L1027 212L1036 217L889 487L882 485L859 378L404 670L750 561L615 998H899Z"/><path class="l1" d="M1024 215L737 247L826 316L462 439L595 1H312L60 804L790 340L843 341Z"/><path class="l1" d="M380 687L48 842L0 998H283Z"/></svg>';
 const TABS = [
@@ -219,7 +223,7 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
       </div>
       <div class="hero-row">
         <div>
-          ${volver ? `<a class="back" href="${volver[0]}">← ${volver[1]}</a>` : ''}
+          ${volver ? `<a class="back" href="${volver[0]}">${ICON.atras}<span>${volver[1]}</span></a>` : ''}
           <p class="eyebrow">${esc(eyebrow)}</p>
           <h1>${esc(titulo)}</h1>
           ${sub ? `<p class="sub">${esc(sub)}</p>` : ''}
@@ -321,7 +325,8 @@ async function vistaListado() {
 function filaHTML(p, i) {
   const contraparte = p.direccion === 'enviado' ? `Para ${p.destinatario}` : `De ${p.remitente}`;
   const nombre = p.direccion === 'enviado' ? p.destinatario : p.remitente;
-  return `<li><a class="glass row" href="#/paquete/${p.id}">
+  // Los paquetes listos para recoger esperan una acción tuya: su tarjeta late suave para destacar sobre el resto.
+  return `<li><a class="glass row${p.estado === 'listo_para_recoger' ? ' recoger' : ''}" href="#/paquete/${p.id}" ${p.estado === 'listo_para_recoger' ? 'aria-label="Listo para recoger: ' + esc(nombre) + '"' : ''}>
     <div class="avatar" style="--c:${AVATARES[p.id % AVATARES.length]}" aria-hidden="true">${esc(iniciales(nombre))}</div>
     <div class="who">${esc(nombre)}<small>#${p.id}</small></div>
     ${badge(p.estado)}
@@ -386,7 +391,7 @@ const historialHTML = (eventos) => eventos.length
 
 /* ---------- detalle ---------- */
 async function vistaDetalle(id) {
-  layout({ eyebrow: 'Detalle', titulo: `Paquete #${id}`, volver: ['#/', 'Listado'], contenido: '<p class="empty glass">Cargando…</p>' });
+  layout({ eyebrow: 'Detalle', titulo: `Paquete #${id}`, volver: [ultimaLista, 'Volver'], contenido: '<p class="empty glass">Cargando…</p>' });
   let r;
   try { r = await api('/' + id); } catch { return error('No se pudo conectar con la API.'); }
   if (r.code !== 200) return error(r.message);
@@ -394,7 +399,7 @@ async function vistaDetalle(id) {
   const eventos = p.eventos || [];
 
   layout({
-    eyebrow: p.direccion === 'enviado' ? 'Envío' : 'Recepción', titulo: `Paquete #${p.id}`, sub: badgeText(p), volver: ['#/', 'Listado'], mascota: `estado:${p.estado}`,
+    eyebrow: p.direccion === 'enviado' ? 'Envío' : 'Recepción', titulo: `Paquete #${p.id}`, sub: badgeText(p), volver: [ultimaLista, 'Volver'], mascota: `estado:${p.estado}`,
     contenido: `
       <section class="glass card" aria-label="Seguimiento"><h2>Seguimiento</h2>${seguimientoHTML(p, eventos)}</section>
       <div class="grid2">
@@ -578,7 +583,7 @@ async function vistaFormulario(id) {
 
   layout({
     eyebrow: id ? 'Editar' : 'Nuevo', titulo: id ? `Editar paquete #${id}` : 'Nuevo paquete',
-    volver: [id ? '#/paquete/' + id : '#/', 'Cancelar'],
+    volver: [id ? '#/paquete/' + id : ultimaLista, 'Cancelar'],
     contenido: `<section class="glass card narrow"><form class="f" novalidate>
         <div class="two">${campo('remitente', 'Remitente', 'text', 'placeholder="Nombre o tienda" required maxlength="120"')}
         ${campo('destinatario', 'Destinatario', 'text', 'placeholder="Nombre del destinatario" required maxlength="120"')}</div>
@@ -739,10 +744,11 @@ function router() {
   if (!sesion) { modoAcceso = 'entrar'; location.hash = '#/acceso'; return; } // sin sesión solo se ve el acceso
   if (ruta === 'clave') return vistaClaveNueva();
   if (ruta === 'paquete' && /^\d+$/.test(id)) return vistaDetalle(id);
-  if (ruta === 'actividad') return vistaActividad();
+  if (ruta === 'actividad') { ultimaLista = '#/actividad'; return vistaActividad(); }
   if (ruta === 'ajustes') return vistaAjustes();
   if (ruta === 'nuevo') return vistaFormulario();
   if (ruta === 'editar' && /^\d+$/.test(id)) return vistaFormulario(id);
+  ultimaLista = '#/';
   return vistaListado();
 }
 /** Rutea la dirección actual; si trae el token de un enlace del correo (también con la app ya abierta), lo recoge antes. */
