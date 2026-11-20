@@ -245,4 +245,32 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
   .n{width:120px;margin-left:-60px}
   .n b{font-size:14px}
 }
+
+/* ---- Fondos (en prueba): cabecera y página ---- */
+.hero{position:relative;overflow:hidden}
+.wrap{position:relative;z-index:1}
+body{position:relative}
+
+/* 1 · Ruta: una línea de puntos entre dos hubs en la cabecera; grano de papel en la página */
+:root[data-fondo="1"] .hero::before{content:"";position:absolute;pointer-events:none;left:0;right:0;bottom:6px;height:60px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 120' fill='none'%3E%3Cpath d='M24 98C230 6 540 6 768 68' stroke='%23E8663A' stroke-width='3.4' stroke-linecap='round' stroke-dasharray='0.1 10.5'/%3E%3Ccircle cx='24' cy='98' r='9' stroke='%23F0B64E' stroke-width='3'/%3E%3Ccircle cx='770' cy='68' r='10' fill='%23E8663A'/%3E%3Ccircle cx='770' cy='68' r='3.6' fill='%232B2118'/%3E%3C/svg%3E") no-repeat center bottom/100% auto;opacity:.9}
+:root[data-fondo="1"] body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:radial-gradient(color-mix(in srgb,var(--ink) 11%,transparent) 1px,transparent 1.3px),radial-gradient(color-mix(in srgb,var(--ink) 8%,transparent) 1px,transparent 1.3px),radial-gradient(color-mix(in srgb,var(--accent) 9%,transparent) 1px,transparent 1.3px);background-size:7px 7px,11px 11px,17px 17px;background-position:0 0,3px 5px,8px 2px}
+
+/* 2 · Correo aéreo: banda de rayas diagonales en el borde de la cabecera; puntos en la página */
+:root[data-fondo="2"] .hero::after{content:"";position:absolute;pointer-events:none;left:0;right:0;bottom:0;height:10px;
+  background:repeating-linear-gradient(135deg,#E8663A 0 16px,#F5EEE0 16px 24px,#F0B64E 24px 40px,#F5EEE0 40px 48px)}
+:root[data-fondo="2"] .hero{padding-bottom:calc(var(--head-pb) + 10px)}
+:root[data-fondo="2"] body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(circle,color-mix(in srgb,var(--ink) 20%,transparent) 1px,transparent 1.7px) 0 0/22px 22px}
+
+/* 3 · Código: franja de código de barras en la cabecera; la H como marca de agua en la página */
+:root[data-fondo="3"] .hero::before{content:"";position:absolute;pointer-events:none;top:78px;bottom:16px;right:0;width:58%;opacity:.28;
+  background:repeating-linear-gradient(90deg,#F0B64E 0 3px,transparent 3px 7px,#F0B64E 7px 8px,transparent 8px 13px,#F0B64E 13px 17px,transparent 17px 20px,#F0B64E 20px 21px,transparent 21px 27px,#F0B64E 27px 29px,transparent 29px 33px);
+  -webkit-mask-image:linear-gradient(to left,#000 15%,transparent);mask-image:linear-gradient(to left,#000 15%,transparent)}
+:root[data-fondo="3"] body::before{content:"";position:fixed;right:-60px;bottom:70px;width:420px;height:347px;z-index:-1;pointer-events:none;opacity:.11;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1210 1000'%3E%3Cpath d='M1208 1H924L853 232L1027 212L1036 217L889 487L882 485L859 378L404 670L750 561L615 998H899Z M1024 215L737 247L826 316L462 439L595 1H312L60 804L790 340L843 341Z M380 687L48 842L0 998H283Z' fill='%23C8501A'/%3E%3C/svg%3E") no-repeat center/contain}
+
+@media (min-width:760px){
+  :root[data-fondo="1"] .hero::before{left:auto;right:max(32px,calc((100% - 1120px)/2));width:300px;height:45px;bottom:6px;background-size:100% 100%}
+  :root[data-fondo="3"] .hero::before{top:96px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
