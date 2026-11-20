@@ -26,6 +26,17 @@ Las cuentas las gestiona **Supabase Auth** (correo y contraseña). El navegador 
 - Cada paquete tiene `user_id` (el id del usuario en Supabase). Los paquetes creados antes de las cuentas quedan sin dueño y no se ven hasta asignarlos: `UPDATE paquetes SET user_id = '<id del usuario>' WHERE user_id IS NULL;` (el id está en Supabase → Authentication → Users). En local, `SEED_USER_ID=<id> npm run db:reset` asigna los ejemplos a esa cuenta.
 - Ajustes de Supabase necesarios: ver «Despliegue».
 
+## Seguimiento automático
+La app consulta sola el estado de los paquetes con número de seguimiento a un **servicio de seguimiento** (un proveedor que reúne muchas paqueterías) y actualiza el estado, el historial y las notificaciones.
+
+- **Proveedores** (`lib/seguimiento/`): cada uno es un archivo con `consultar({ numero, courier })`. Hoy solo existe el **simulado** (`SEGUIMIENTO_PROVEEDOR=simulado`, para desarrollar y probar: el número decide la situación, p. ej. `SIM-RECOGER`). El adaptador del proveedor real (TrackingMore) está **pendiente**: hace falta su clave de API para probarlo con envíos reales. Sin proveedor configurado, el seguimiento automático queda apagado y la web no muestra nada de él.
+- **Qué hace:** guarda los eventos nuevos sin duplicarlos, cambia el estado (sin «retroceder» nunca por falta de información) y avisa al dueño. «Pickup» de TrackingMore significa a la vez «en reparto» y «listo para recoger»: se separa por el texto del evento (`lib/seguimiento/clasificar.js`, a afinar con envíos reales).
+- **Cambios a mano:** si corriges un estado a mano, manda sobre el seguimiento hasta que la paquetería informe de algo más nuevo.
+- **Paquetes que se consultan:** con número de seguimiento, abiertos (no entregados), con la casilla «Consultar el seguimiento automáticamente» y de los últimos 60 días; los consultados hace más tiempo, primero.
+- **Tarea periódica:** `GET /api/cron/seguimiento` con `Authorization: Bearer <CRON_SECRET>`. Consulta hasta `SEGUIMIENTO_MAX_POR_EJECUCION` paquetes (15 por defecto). **Aún no está programada en `vercel.json`**: se añadirá tras comprobar en una vista previa cada cuánto permite ejecutarla el plan de Vercel.
+- **Actualizar ahora:** `POST /paquetes/{id}` consulta un paquete al momento (como mucho una vez por minuto).
+- **PIN y punto de recogida:** el seguimiento no da el PIN (lo envía la paquetería por SMS o correo); habrá que escribirlo a mano o sacarlo del correo (Fase 3).
+
 ## API
 Siempre devuelve `{status, code, message, data}` (salvo `204`, que no lleva cuerpo). Todas las rutas, salvo `/config`, exigen sesión.
 
@@ -36,6 +47,7 @@ Siempre devuelve `{status, code, message, data}` (salvo `204`, que no lleva cuer
 | POST | `/paquetes` | 201 / 422 |
 | PUT | `/paquetes/{id}` (admite cambios parciales) | 200 / 404 / 422 |
 | DELETE | `/paquetes/{id}` | 204 / 404 |
+| POST | `/paquetes/{id}` (consulta el seguimiento ahora) | 200 / 404 / 422 / 429 / 502 / 503 |
 | GET | `/config` (pública) | 200 |
 | GET | `/eventos` (actividad reciente, `?limite=50`) | 200 |
 | GET | `/push` (clave pública de notificaciones) | 200 |
@@ -56,7 +68,7 @@ Estados: `pendiente`, `en_reparto`, `listo_para_recoger`, `entregado`, `incidenc
 - `docs/` plan, paleta, bocetos y logo
 
 ## Despliegue (Vercel + Supabase)
-1. Ejecuta `database/schema.sql` en el SQL Editor de Supabase. Si la base ya existía de antes, ejecuta en su lugar las migraciones de `database/migraciones/` que falten (`002` historial y push, `003` cuentas).
+1. Ejecuta `database/schema.sql` en el SQL Editor de Supabase. Si la base ya existía de antes, ejecuta en su lugar las migraciones de `database/migraciones/` que falten (`002` historial y push, `003` cuentas, `004` seguimiento automático).
 2. En Vercel, importa el repo y añade la variable `DATABASE_URL` (cadena *pooler* de Supabase).
 3. Notificaciones push (opcional): `npm run vapid` genera las claves; añade `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (secreta) y `VAPID_SUBJECT` en Vercel y vuelve a desplegar. Después, en la app, ve a Ajustes → Activar notificaciones. En iPhone hay que instalar antes la app en la pantalla de inicio.
 4. Cada commit a `main` se publica en producción; el resto de ramas generan *previews*.

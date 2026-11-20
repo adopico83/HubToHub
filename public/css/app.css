@@ -1,4 +1,7 @@
 /* HubToHub · estilos. Paleta «Cartón»: papel cálido, marrón espresso y terracota. Colores y tipografía son variables; el tema oscuro solo las redefine. */
+/* Tipografías alojadas aquí (no se pide nada a Google): solo el subconjunto latino, suficiente para español. */
+@font-face{font-family:'Figtree';font-style:normal;font-weight:400 700;font-display:swap;src:url(/fonts/figtree-latin.woff2) format('woff2')}
+@font-face{font-family:'Fraunces';font-style:normal;font-weight:500 700;font-display:swap;src:url(/fonts/fraunces-latin.woff2) format('woff2')}
 :root{
   --f-body:'Figtree',system-ui,sans-serif;
   --f-head:'Fraunces',Georgia,serif;
@@ -187,6 +190,8 @@ input[type=search]{padding-left:46px;background:var(--field);border-color:color-
 .hist,.feed{list-style:none;margin:0;padding:0}
 .hist li{display:grid;grid-template-columns:14px 1fr auto;gap:0 12px;align-items:start;position:relative;padding-bottom:18px}
 .hist li:last-child{padding-bottom:0}
+.hist li.reg{--c:var(--muted)}
+.hist li.reg b{font-weight:600;color:var(--muted)}
 .hist li::before{content:"";position:absolute;left:6px;top:18px;bottom:-2px;width:2px;background:var(--line)}
 .hist li:last-child::before{display:none}
 .d{width:14px;height:14px;margin-top:4px;border-radius:50%;background:var(--c);box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 22%,transparent)}
@@ -232,6 +237,7 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 
 /* Móvil: pestañas fijas abajo, botón flotante y listado compacto */
 @media (max-width:759px){
+  .toast{bottom:calc(92px + env(safe-area-inset-bottom))}
   .tabs-top,.stats,.hero-row .btn{display:none}
   .tabs-bottom{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:6;padding:6px;border-radius:18px;
     background:var(--surface);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.18)}
@@ -312,4 +318,15 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .enlaces-acceso{display:flex;flex-wrap:wrap;gap:6px 18px}
 .enlace{padding:6px 0;border:0;background:none;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .pequeno{font-size:13px}
+.auto{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.auto .btn{min-height:40px;padding:0 16px}
+.check{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.check input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--accent);flex:0 0 auto}
+.check span{display:flex;flex-direction:column;font-weight:600}
+.check small{font-weight:500;color:var(--muted);font-size:13px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.chips-flecha{animation:none!important}.row.recoger{animation:none!important;box-shadow:var(--shadow),0 0 0 2px color-mix(in srgb,var(--c-listo_para_recoger) 35%,transparent)}}
+
+.legal-links a{color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.enlace.peligro{color:color-mix(in srgb,var(--c-incidencia) 80%,var(--ink))}
+.borrar{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.borrar .actions{margin-top:12px}

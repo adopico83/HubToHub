@@ -2,6 +2,7 @@
 'use strict';
 
 const API = '/paquetes';
+const CUENTA = '/cuenta';
 const ESTADOS = {
   pendiente:          'Pendiente',
   en_reparto:         'En reparto',
@@ -18,6 +19,15 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const fechaES = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
 const pesoES = (p) => (p == null ? '—' : Number(p).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 3 }));
 const iniciales = (n) => n.split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase();
+/** «hace 3 min», «hace 2 h», «hace 1 día» */
+function hace(iso) {
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (m < 1) return 'ahora mismo';
+  if (m < 60) return `hace ${m} min`;
+  if (m < 1440) return `hace ${Math.round(m / 60)} h`;
+  const d = Math.round(m / 1440);
+  return `hace ${d} ${d === 1 ? 'día' : 'días'}`;
+}
 const hora = (iso) => new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 const fechaHoraES = (iso) => new Date(iso).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' ·');
 const diaClave = (iso) => new Date(iso).toLocaleDateString('sv-SE'); // AAAA-MM-DD en hora local
@@ -383,10 +393,14 @@ function seguimientoHTML(p, eventos) {
 }
 
 const historialHTML = (eventos) => eventos.length
-  ? `<ol class="hist">${[...eventos].reverse().map((e) => `<li class="e-${e.estado}">
+  ? `<ol class="hist">${[...eventos].reverse().map((e) => {
+    // El alta del paquete en la app no es un estado: se muestra aparte para que no parezca que vuelve a estar pendiente.
+    const alta = e.detalle === 'Paquete registrado';
+    return `<li class="e-${e.estado}${alta ? ' reg' : ''}">
       <span class="d"></span>
-      <div><b>${ESTADOS[e.estado] || esc(e.estado)}</b>${e.detalle ? `<span>${esc(e.detalle)}</span>` : ''}</div>
-      <time datetime="${esc(e.ocurrido_en)}">${esc(fechaHoraES(e.ocurrido_en))}</time></li>`).join('')}</ol>`
+      <div><b>${alta ? 'Añadido a HubToHub' : ESTADOS[e.estado] || esc(e.estado)}</b>${e.detalle && !alta ? `<span>${esc(e.detalle)}</span>` : ''}</div>
+      <time datetime="${esc(e.ocurrido_en)}">${esc(fechaHoraES(e.ocurrido_en))}</time></li>`;
+  }).join('')}</ol>`
   : '<p class="muted">Todavía no hay movimientos.</p>';
 
 /* ---------- detalle ---------- */
@@ -397,6 +411,10 @@ async function vistaDetalle(id) {
   if (r.code !== 200) return error(r.message);
   const p = r.data;
   const eventos = p.eventos || [];
+  const cfg = await cargarConfig().catch(() => ({}));
+  const auto = cfg.seguimiento && p.numero_seguimiento
+    ? `<div class="auto"><p class="muted">${p.seguimiento_auto ? `Seguimiento automático activo · ${p.consultado_en ? 'consultado ' + hace(p.consultado_en) : 'aún sin consultar'}` : 'Seguimiento automático desactivado'}</p>${p.seguimiento_auto ? '<button class="btn ghost-d" id="act" type="button">Actualizar ahora</button>' : ''}</div>`
+    : '';
 
   layout({
     eyebrow: p.direccion === 'enviado' ? 'Envío' : 'Recepción', titulo: `Paquete #${p.id}`, sub: badgeText(p), volver: [ultimaLista, 'Volver'], mascota: `estado:${p.estado}`,
@@ -416,6 +434,7 @@ async function vistaDetalle(id) {
             <div><dt>Paquetería</dt><dd>${esc(p.paqueteria || '—')}</dd></div>
             <div><dt>Nº seguimiento</dt><dd>${esc(p.numero_seguimiento || '—')}</dd></div>
           </dl>
+          ${auto}
           <div class="field quick"><label for="cambiar">Cambiar estado</label>
             <select id="cambiar">${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${p.estado === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
           <div class="actions">
@@ -429,6 +448,17 @@ async function vistaDetalle(id) {
   // Anima la línea desde el principio hasta su posición.
   requestAnimationFrame(() => requestAnimationFrame(() => $app.querySelector('.track')?.classList.add('go')));
 
+  document.getElementById('act')?.addEventListener('click', async (ev) => {
+    ev.target.disabled = true;
+    ev.target.textContent = 'Consultando…';
+    try {
+      const res = await api('/' + p.id, { method: 'POST' });
+      if (res.code === 200) { toast(res.data?.encontrado === false ? 'La paquetería aún no tiene información' : res.message); return vistaDetalle(id); }
+      toast(res.message || 'No se pudo consultar', true);
+    } catch { toast('No se pudo conectar con la API', true); }
+    ev.target.disabled = false;
+    ev.target.textContent = 'Actualizar ahora';
+  });
   document.getElementById('cambiar').addEventListener('change', async (ev) => {
     ev.target.disabled = true;
     try {
@@ -546,6 +576,12 @@ function vistaAjustes() {
         <p class="muted">${sesion?.email ? `Has entrado como <b>${esc(sesion.email)}</b>.` : 'Sesión iniciada.'}</p>
         <div class="actions"><button class="btn ghost-d" id="salir" type="button">Cerrar sesión</button></div>
       </section>
+      <section class="glass card" aria-label="Privacidad y datos"><h2>${ICON.caja}Privacidad y datos</h2>
+        <p class="muted">Tus datos son tuyos: puedes llevártelos o borrarlos para siempre.</p>
+        <div class="actions"><button class="btn ghost-d" id="exportar" type="button">Descargar mis datos</button></div>
+        <div class="borrar" id="borrar-zona"><button class="enlace peligro" id="borrar-abrir" type="button">Eliminar mi cuenta…</button></div>
+        <p class="muted pequeno legal-links"><a href="/privacidad.html">Política de privacidad</a> · <a href="/terminos.html">Términos de uso</a></p>
+      </section>
       <section class="glass card" aria-label="Apariencia"><h2>${ICON.sol}Apariencia</h2>
         <p class="muted">Elige el tema de la app.</p>
         <div class="seg" data-ajuste="tema">${[['auto', 'Automático'], ['claro', 'Claro'], ['oscuro', 'Oscuro']].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${guardado('tema', 'auto') === k}">${v}</button>`).join('')}</div>
@@ -556,6 +592,8 @@ function vistaAjustes() {
   });
   pintarPush();
   document.getElementById('salir').addEventListener('click', cerrarSesion);
+  document.getElementById('exportar').addEventListener('click', descargarMisDatos);
+  document.getElementById('borrar-abrir').addEventListener('click', abrirBorrarCuenta);
   $app.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (ev) => {
     const b = ev.target.closest('button');
     if (!b) return;
@@ -567,6 +605,7 @@ function vistaAjustes() {
 
 /* ---------- alta / edición ---------- */
 async function vistaFormulario(id) {
+  const cfg = await cargarConfig().catch(() => ({}));
   let p = { remitente: '', destinatario: '', peso: '', estado: 'pendiente', fecha: new Date().toISOString().slice(0, 10), numero_seguimiento: '', paqueteria: '', direccion: 'recibido' };
   if (id) {
     try {
@@ -593,6 +632,7 @@ async function vistaFormulario(id) {
         ${campo('fecha', 'Fecha', 'date')}</div>
         <div class="two">${campo('paqueteria', 'Paquetería (opcional)', 'text', 'placeholder="Correos, GLS, InPost…" maxlength="60"')}
         ${campo('numero_seguimiento', 'Nº de seguimiento (opcional)', 'text', 'maxlength="60"')}</div>
+        ${cfg.seguimiento ? `<label class="check"><input type="checkbox" name="seguimiento_auto" ${p.seguimiento_auto === false ? '' : 'checked'}><span>Consultar el seguimiento automáticamente<small>Con número de seguimiento, la app mira sola la paquetería y actualiza el estado.</small></span></label>` : ''}
         <div class="actions"><button class="btn blue" type="submit">${id ? 'Guardar cambios' : 'Crear paquete'}</button></div>
       </form></section>`,
   });
@@ -602,6 +642,7 @@ async function vistaFormulario(id) {
     ev.preventDefault();
     form.querySelectorAll('.field').forEach((f) => { f.classList.remove('bad'); f.querySelector('.err').textContent = ''; });
     const body = Object.fromEntries(new FormData(form));
+    if (form.seguimiento_auto) body.seguimiento_auto = form.seguimiento_auto.checked; // una casilla sin marcar no viaja en el formulario
     try {
       const r = await api(id ? '/' + id : '', { method: id ? 'PUT' : 'POST', body });
       if (r.code === 422) {
@@ -643,6 +684,9 @@ function vistaAcceso() {
         ${modoAcceso === 'entrar' ? '<button type="button" class="enlace" data-modo="recuperar">He olvidado mi contraseña</button>' : ''}
       </div>
       ${nueva ? '<p class="muted pequeno">Mínimo 8 caracteres.</p>' : ''}
+      <p class="muted pequeno legal-links">${nueva
+        ? 'Al crear la cuenta aceptas los <a href="/terminos.html">Términos de uso</a> y la <a href="/privacidad.html">Política de privacidad</a>.'
+        : '<a href="/privacidad.html">Privacidad</a> · <a href="/terminos.html">Términos de uso</a>'}</p>
     </form></section>`,
   });
   const form = document.getElementById('acceso');
@@ -705,6 +749,52 @@ function vistaClaveNueva() {
     } catch { const a = document.getElementById('aviso-acceso'); a.textContent = 'No se pudo conectar.'; a.className = 'aviso mal'; }
     boton.disabled = false;
   });
+}
+
+/** Descarga todo lo que HubToHub guarda de la persona, en un fichero JSON. */
+async function descargarMisDatos(ev) {
+  const boton = ev.currentTarget;
+  boton.disabled = true;
+  try {
+    const r = await llamar(CUENTA);
+    if (r.code !== 200) return toast(r.message || 'No se pudieron descargar los datos', true);
+    const enlace = document.createElement('a');
+    enlace.href = URL.createObjectURL(new Blob([JSON.stringify(r.data, null, 2)], { type: 'application/json' }));
+    enlace.download = `hubtohub-mis-datos-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(enlace); enlace.click(); enlace.remove();
+    setTimeout(() => URL.revokeObjectURL(enlace.href), 10_000);
+    toast('Datos descargados');
+  } catch { toast('No se pudo conectar con el servidor', true); } finally { boton.disabled = false; }
+}
+
+/** Borrar la cuenta pide escribir el correo: es irreversible. */
+function abrirBorrarCuenta() {
+  const zona = document.getElementById('borrar-zona');
+  const correo = sesion?.email ?? '';
+  zona.innerHTML = `<form class="f" id="borrar-form" novalidate>
+    <p class="aviso mal">Se borrarán para siempre tus paquetes, su historial, tus avisos y tu cuenta. No se puede deshacer.</p>
+    <div class="field"><label for="borrar-conf">Escribe ${correo ? `<b>${esc(correo)}</b>` : 'ELIMINAR'} para confirmar</label>
+      <input id="borrar-conf" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="200"><div class="err" role="alert"></div></div>
+    <div class="actions"><button class="btn danger" type="submit">Eliminar para siempre</button><button class="btn ghost-d" type="button" id="borrar-no">Cancelar</button></div></form>`;
+  document.getElementById('borrar-no').addEventListener('click', () => vistaAjustes());
+  document.getElementById('borrar-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const boton = ev.currentTarget.querySelector('button[type=submit]');
+    const err = ev.currentTarget.querySelector('.err');
+    boton.disabled = true; err.textContent = '';
+    try {
+      const r = await llamar(CUENTA, { method: 'DELETE', body: { confirmar: document.getElementById('borrar-conf').value } });
+      if (r.code === 422) { err.textContent = r.data?.confirmar || r.message; boton.disabled = false; return; }
+      if (r.code !== 200) { toast(r.message || 'No se pudo eliminar la cuenta', true); boton.disabled = false; return; }
+      const sub = await navigator.serviceWorker?.getRegistration().then((g) => g?.pushManager.getSubscription()).catch(() => null);
+      sub?.unsubscribe().catch(() => {});
+      guardarSesion(null);
+      modoAcceso = 'entrar';
+      location.hash = '#/acceso';
+      toast('Tu cuenta y tus datos se han eliminado');
+    } catch { toast('No se pudo conectar con el servidor', true); boton.disabled = false; }
+  });
+  document.getElementById('borrar-conf').focus();
 }
 
 async function cerrarSesion() {
