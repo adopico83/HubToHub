@@ -13,7 +13,7 @@ Objetivo: un panel único (móvil primero) que sigue por sí solo todos tus paqu
 - Pasar de CSV a SQLite o MySQL (misma capa DataHandler, solo cambia la persistencia).
 - Campos: `id`, `remitente`, `destinatario`, `peso`, `estado`, `fecha`, más `numero_seguimiento`, `paqueteria`, `direccion` (recibido / enviado).
 - Interfaz del mockup (escritorio y móvil) consumiendo la API. Instalable como PWA.
-- Login básico. Alta de paquetes a mano.
+- Login básico (**en curso**). Alta de paquetes a mano.
 
 ## Fase 2 – Seguimiento automático
 - Un **conector por paquetería** con la misma interfaz: `detectar(numero)` y `consultar(numero)` devuelven un estado normalizado: `pendiente`, `en_reparto`, `listo_para_recoger`, `entregado`, `incidencia`.
@@ -21,6 +21,15 @@ Objetivo: un panel único (móvil primero) que sigue por sí solo todos tus paqu
 - Una tarea programada (cron) consulta cada X minutos los paquetes abiertos y guarda cada cambio en una tabla `eventos`.
 - Avisos por correo, notificación web o Telegram.
 - **Por verificar:** condiciones de acceso de cada paquetería (API oficial, contrato, scraping permitido o no).
+
+## Resolver una incidencia (pendiente de planificar)
+Hoy una incidencia solo se muestra (estado rojo y Hubi preocupado). Falta poder actuar desde la propia ficha del paquete:
+- Botón «Resolver incidencia» en el detalle de un paquete con estado `incidencia`, con acceso directo a la mensajería: la página oficial de seguimiento y de atención al cliente de la paquetería, con el número de seguimiento ya copiado o puesto en el enlace.
+- Teléfono y formulario de contacto de cada paquetería (Correos, SEUR, GLS, InPost, Amazon Logistics…), guardados en una tabla de datos por paquetería para poder actualizarlos sin tocar el código.
+- Mensaje de reclamación prellenado (remitente, fecha, número de seguimiento y motivo) para copiarlo o enviarlo por correo.
+- Estado de la gestión (reclamación abierta, respondida, resuelta) y aviso si pasan N días sin respuesta.
+- **Por verificar:** las direcciones y teléfonos de atención de cada paquetería, y si admiten enlaces directos con el número de seguimiento. No se darán por buenos hasta comprobarlos en sus webs oficiales.
+- Encaja con la Fase 2 (saber la paquetería y el número) y con las alertas de la Fase 5.
 
 ## Fase 3 – Correo
 - Gmail API con permiso de solo lectura (OAuth).
