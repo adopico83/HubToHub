@@ -51,13 +51,83 @@ function toast(msg, error = false) {
   toast.t = setTimeout(() => (t.className = 'toast'), 3000);
 }
 
-/** Llama a la API y devuelve {code, data, message}. Lanza si no hay red. */
+/* ---------- sesión (Supabase Auth) ---------- */
+const CLAVE_SESION = 'hubtohub.sesion';
+let sesion = null; // { access_token, refresh_token, expires_at (s), email }
+try { sesion = JSON.parse(localStorage.getItem(CLAVE_SESION) || 'null'); } catch { sesion = null; }
+const guardarSesion = (s) => { sesion = s; try { s ? localStorage.setItem(CLAVE_SESION, JSON.stringify(s)) : localStorage.removeItem(CLAVE_SESION); } catch { /* sin almacenamiento */ } };
+
+let configAuth = null;
+async function cargarConfig() {
+  if (!configAuth) configAuth = (await (await fetch('/config')).json()).data;
+  return configAuth;
+}
+
+/** Llama al servicio de autenticación. Devuelve { ok, status, datos }. */
+async function authFetch(ruta, { metodo = 'POST', cuerpo, token } = {}) {
+  const cfg = await cargarConfig();
+  const res = await fetch(`${cfg.supabaseUrl}/auth/v1/${ruta}`, {
+    method: metodo,
+    headers: { 'Content-Type': 'application/json', apikey: cfg.clavePublica, Authorization: `Bearer ${token || cfg.clavePublica}` },
+    body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+  });
+  let datos = null;
+  try { datos = await res.json(); } catch { /* sin cuerpo */ }
+  return { ok: res.ok, status: res.status, datos };
+}
+
+const MENSAJES_AUTH = [
+  [/invalid login credentials/i, 'Correo o contraseña incorrectos.'],
+  [/user already registered|already been registered/i, 'Ya existe una cuenta con ese correo.'],
+  [/email not confirmed/i, 'Confirma tu correo: te hemos enviado un enlace. Revisa también el spam.'],
+  [/password should be at least|weak.password/i, 'La contraseña es demasiado corta o débil.'],
+  [/rate limit|too many/i, 'Demasiados intentos. Espera un rato y vuelve a probar.'],
+  [/signups? not allowed|signup.*disabled/i, 'El registro de cuentas nuevas está cerrado.'],
+  [/unable to validate email|invalid.*email/i, 'Ese correo no parece válido.'],
+];
+function textoErrorAuth(r) {
+  const m = r.datos?.error_description || r.datos?.msg || r.datos?.message || r.datos?.error || '';
+  const conocido = MENSAJES_AUTH.find(([re]) => re.test(m));
+  if (conocido) return conocido[1];
+  return r.status === 429 ? MENSAJES_AUTH[4][1] : 'No se pudo completar. Inténtalo de nuevo.';
+}
+
+function sesionDeRespuesta(d, email) {
+  return { access_token: d.access_token, refresh_token: d.refresh_token, expires_at: d.expires_at || Math.floor(Date.now() / 1000) + (d.expires_in || 3600), email: d.user?.email || email || sesion?.email || '' };
+}
+
+let renovando = null;
+/** Token válido (lo renueva si caduca en menos de un minuto). null si no hay sesión o no se puede renovar. */
+async function tokenValido() {
+  if (!sesion) return null;
+  if (sesion.expires_at - Date.now() / 1000 > 60) return sesion.access_token;
+  renovando ||= (async () => {
+    try {
+      const r = await authFetch('token?grant_type=refresh_token', { cuerpo: { refresh_token: sesion.refresh_token } });
+      if (r.ok && r.datos?.access_token) { guardarSesion(sesionDeRespuesta(r.datos, sesion.email)); return sesion.access_token; }
+      if (r.status >= 400 && r.status < 500) { guardarSesion(null); return null; } // refresco rechazado: sesión terminada
+      return sesion?.access_token ?? null; // fallo de red: se intenta con el token actual
+    } catch { return sesion?.access_token ?? null; } finally { renovando = null; }
+  })();
+  return renovando;
+}
+
+function irAlAcceso() {
+  guardarSesion(null);
+  if (location.hash !== '#/acceso') location.hash = '#/acceso';
+  else router();
+}
+
+/** Llama a la API y devuelve {code, data, message}. Lanza si no hay red. Si la sesión no vale, lleva a la pantalla de acceso. */
 async function llamar(url, options = {}) {
+  const token = await tokenValido();
+  if (!token) { irAlAcceso(); return { code: 401, data: null, message: 'Hace falta iniciar sesión' }; }
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...options.headers },
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
+  if (res.status === 401) { irAlAcceso(); return { code: 401, data: null, message: 'La sesión ha caducado' }; }
   if (res.status === 204) return { code: 204, data: null };
   return res.json();
 }
@@ -134,7 +204,7 @@ const TABS = [
 const tabsHTML = (activa, lugar) => `<nav class="tabs tabs-${lugar}" aria-label="Secciones">${TABS.map(([id, href, nombre, icono]) =>
   `<a href="${href}" ${id === activa ? 'aria-current="page"' : ''}>${icono}<span>${nombre}</span></a>`).join('')}</nav>`;
 
-function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquetes', compacto = false, mascota = false }) {
+function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquetes', compacto = false, mascota = false, sinPestanas = false }) {
   // mascota: true = una pose de la rotación (listado); 'estado:<estado>' = la pose de ese estado (detalle).
   const hubi = mascota === true ? elegirHubi() : mascota || null;
   const medidas = hubi ? medidasHubi(hubi.startsWith('estado:') ? hubi : hubi) : null;
@@ -144,7 +214,7 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
     <header class="hero${compacto ? ' compacto' : ''}${hubi ? ' conhubi' : ''}" ${hubi ? `style="--hubi-w:${Math.round(altoMovil * medidas[1] / medidas[2])}px"` : ''}><div class="wrap">
       <div class="top">
         <a class="brand" href="#/" aria-label="HubToHub, inicio"><span class="marca">${MARCA}</span><span>Hub<b>To</b>Hub</span></a>
-        <div class="top-right">${tabsHTML(tab, 'top')}<button class="tema" id="tema" type="button"></button></div>
+        <div class="top-right">${sinPestanas ? '' : tabsHTML(tab, 'top')}<button class="tema" id="tema" type="button"></button></div>
       </div>
       <div class="hero-row">
         <div>
@@ -157,7 +227,7 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
       </div>
     </div>${hubi ? `<img class="hubi${esEstado ? ' estado' : ''}" src="/img/hubi/hubi-${medidas[0]}.webp" alt="" width="${medidas[1]}" height="${medidas[2]}">` : ''}${hubi === 'estado:entregado' ? '<div class="confeti" aria-hidden="true"></div>' : ''}</header>
     <main>${contenido}</main>
-    ${tabsHTML(tab, 'bottom')}`;
+    ${sinPestanas ? '' : tabsHTML(tab, 'bottom')}`;
   if (hubi === 'estado:entregado') lanzarConfeti();
   document.title = `${titulo} · HubToHub`;
   aplicarTema();
@@ -443,6 +513,10 @@ function vistaAjustes() {
     eyebrow: 'Preferencias', titulo: 'Ajustes', sub: 'Avisos e instalación de la app.', tab: 'ajustes',
     contenido: `<div class="grid2 ajustes">
       <section class="glass card" aria-label="Notificaciones"><h2>${ICON.aviso}Notificaciones</h2><div id="push"><p class="muted">Comprobando…</p></div></section>
+      <section class="glass card" aria-label="Cuenta"><h2>${ICON.caja}Cuenta</h2>
+        <p class="muted">${sesion?.email ? `Has entrado como <b>${esc(sesion.email)}</b>.` : 'Sesión iniciada.'}</p>
+        <div class="actions"><button class="btn ghost-d" id="salir" type="button">Cerrar sesión</button></div>
+      </section>
       <section class="glass card" aria-label="Apariencia"><h2>${ICON.sol}Apariencia</h2>
         <p class="muted">Elige el tema de la app.</p>
         <div class="seg" data-ajuste="tema">${[['auto', 'Automático'], ['claro', 'Claro'], ['oscuro', 'Oscuro']].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${guardado('tema', 'auto') === k}">${v}</button>`).join('')}</div>
@@ -452,6 +526,7 @@ function vistaAjustes() {
       </section></div>`,
   });
   pintarPush();
+  document.getElementById('salir').addEventListener('click', cerrarSesion);
   $app.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (ev) => {
     const b = ev.target.closest('button');
     if (!b) return;
@@ -518,9 +593,127 @@ function error(msg) {
   layout({ eyebrow: 'Vaya', titulo: 'Algo no ha ido bien', tab: '', contenido: `<p class="empty glass">${esc(msg)}</p><p class="count"><a href="#/">Volver al listado</a></p>` });
 }
 
+/* ---------- acceso: entrar, crear cuenta, recuperar y cambiar contraseña ---------- */
+let modoAcceso = 'entrar'; // 'entrar' | 'crear' | 'recuperar'
+
+function vistaAcceso() {
+  const t = { entrar: ['Entrar', 'Accede a tus paquetes.'], crear: ['Crear cuenta', 'Cada cuenta tiene sus propios paquetes.'], recuperar: ['Recuperar acceso', 'Te enviamos un enlace para elegir otra contraseña.'] }[modoAcceso];
+  const nueva = modoAcceso === 'crear';
+  layout({
+    eyebrow: 'HubToHub', titulo: t[0], sub: t[1], tab: '', sinPestanas: true,
+    contenido: `<section class="glass card narrow"><form class="f" id="acceso" novalidate>
+      <div class="field" data-f="email"><label for="f-email">Correo</label>
+        <input id="f-email" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="200"><div class="err" role="alert"></div></div>
+      ${modoAcceso === 'recuperar' ? '' : `<div class="field" data-f="clave"><label for="f-clave">Contraseña</label>
+        <input id="f-clave" name="clave" type="password" autocomplete="${nueva ? 'new-password' : 'current-password'}" required minlength="8" maxlength="200">
+        <div class="err" role="alert"></div></div>`}
+      <div id="aviso-acceso" class="aviso" role="status"></div>
+      <div class="actions"><button class="btn blue" type="submit">${t[0]}</button></div>
+      <div class="enlaces-acceso">
+        ${modoAcceso !== 'entrar' ? '<button type="button" class="enlace" data-modo="entrar">Ya tengo cuenta</button>' : '<button type="button" class="enlace" data-modo="crear">Crear una cuenta</button>'}
+        ${modoAcceso === 'entrar' ? '<button type="button" class="enlace" data-modo="recuperar">He olvidado mi contraseña</button>' : ''}
+      </div>
+      ${nueva ? '<p class="muted pequeno">Mínimo 8 caracteres.</p>' : ''}
+    </form></section>`,
+  });
+  const form = document.getElementById('acceso');
+  const aviso = (msg, error = true) => { const a = document.getElementById('aviso-acceso'); a.textContent = msg; a.className = 'aviso' + (msg ? (error ? ' mal' : ' bien') : ''); };
+  form.querySelectorAll('[data-modo]').forEach((b) => b.addEventListener('click', () => { modoAcceso = b.dataset.modo; vistaAcceso(); }));
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    aviso('');
+    form.querySelectorAll('.field').forEach((f) => { f.classList.remove('bad'); f.querySelector('.err').textContent = ''; });
+    const email = form.email.value.trim();
+    const clave = form.clave?.value ?? '';
+    const marca = (campo, msg) => { const f = form.querySelector(`[data-f="${campo}"]`); f.classList.add('bad'); f.querySelector('.err').textContent = msg; };
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return marca('email', 'Escribe un correo válido.');
+    if (modoAcceso !== 'recuperar' && clave.length < (nueva ? 8 : 1)) return marca('clave', nueva ? 'Mínimo 8 caracteres.' : 'Escribe tu contraseña.');
+    const boton = form.querySelector('button[type=submit]');
+    boton.disabled = true;
+    try {
+      if (modoAcceso === 'recuperar') {
+        const r = await authFetch(`recover?redirect_to=${encodeURIComponent(location.origin + '/')}`, { cuerpo: { email } });
+        // Mismo mensaje exista o no la cuenta (no se revela quién está registrado); solo se avisa si hay límite de envíos.
+        if (r.status === 429) aviso(textoErrorAuth(r));
+        else aviso('Si existe una cuenta con ese correo, te hemos enviado un enlace.', false);
+      } else if (modoAcceso === 'crear') {
+        const r = await authFetch(`signup?redirect_to=${encodeURIComponent(location.origin + '/')}`, { cuerpo: { email, password: clave } });
+        if (!r.ok) aviso(textoErrorAuth(r));
+        else if (r.datos?.access_token) { guardarSesion(sesionDeRespuesta(r.datos, email)); location.hash = '#/'; }
+        else aviso('Cuenta creada. Te hemos enviado un enlace para confirmar el correo; ábrelo y vuelve a entrar.', false);
+      } else {
+        const r = await authFetch('token?grant_type=password', { cuerpo: { email, password: clave } });
+        if (r.ok && r.datos?.access_token) { guardarSesion(sesionDeRespuesta(r.datos, email)); location.hash = '#/'; }
+        else aviso(textoErrorAuth(r));
+      }
+    } catch { aviso('No se pudo conectar. Comprueba tu conexión.'); }
+    boton.disabled = false;
+  });
+}
+
+/** Tras abrir el enlace del correo de recuperación: elegir la contraseña nueva. */
+function vistaClaveNueva() {
+  layout({
+    eyebrow: 'HubToHub', titulo: 'Nueva contraseña', sub: 'Elige una contraseña nueva para tu cuenta.', tab: '', sinPestanas: true,
+    contenido: `<section class="glass card narrow"><form class="f" id="clave-nueva" novalidate>
+      <div class="field" data-f="clave"><label for="f-clave">Contraseña nueva</label>
+        <input id="f-clave" name="clave" type="password" autocomplete="new-password" required minlength="8" maxlength="200"><div class="err" role="alert"></div></div>
+      <div id="aviso-acceso" class="aviso" role="status"></div>
+      <div class="actions"><button class="btn blue" type="submit">Guardar contraseña</button></div>
+    </form></section>`,
+  });
+  const form = document.getElementById('clave-nueva');
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const clave = form.clave.value;
+    const f = form.querySelector('[data-f="clave"]'); f.classList.remove('bad'); f.querySelector('.err').textContent = '';
+    if (clave.length < 8) { f.classList.add('bad'); f.querySelector('.err').textContent = 'Mínimo 8 caracteres.'; return; }
+    const boton = form.querySelector('button[type=submit]'); boton.disabled = true;
+    try {
+      const r = await authFetch('user', { metodo: 'PUT', cuerpo: { password: clave }, token: await tokenValido() });
+      if (r.ok) { toast('Contraseña cambiada'); location.hash = '#/'; return; }
+      const a = document.getElementById('aviso-acceso'); a.textContent = textoErrorAuth(r); a.className = 'aviso mal';
+    } catch { const a = document.getElementById('aviso-acceso'); a.textContent = 'No se pudo conectar.'; a.className = 'aviso mal'; }
+    boton.disabled = false;
+  });
+}
+
+async function cerrarSesion() {
+  const token = sesion?.access_token;
+  // Cerrar la sesión no puede depender de nada más: primero se borra y se vuelve al acceso.
+  const endpoint = await navigator.serviceWorker?.getRegistration().then((r) => r?.pushManager.getSubscription()).then((s) => s?.endpoint).catch(() => null);
+  guardarSesion(null);
+  modoAcceso = 'entrar';
+  location.hash = '#/acceso';
+  // Y después, sin esperar: se avisa al servicio de autenticación y se quita este dispositivo de las notificaciones de la cuenta.
+  if (token) {
+    authFetch('logout', { token }).catch(() => {});
+    if (endpoint) fetch(API.replace('/paquetes', '/push'), { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ endpoint }) }).catch(() => {});
+  }
+}
+
+/** Si se abre la app desde un enlace de Supabase (confirmar correo o recuperar contraseña), el token llega en la URL. */
+async function recogerTokenDeLaUrl() {
+  if (!location.hash.startsWith('#access_token=') && !location.hash.includes('&access_token=')) return null;
+  const p = new URLSearchParams(location.hash.slice(1));
+  const token = p.get('access_token');
+  const tipo = p.get('type');
+  history.replaceState(null, '', location.pathname + location.search + '#/');
+  if (!token) return null;
+  guardarSesion({ access_token: token, refresh_token: p.get('refresh_token') || '', expires_at: Number(p.get('expires_at')) || Math.floor(Date.now() / 1000) + Number(p.get('expires_in') || 3600), email: '' });
+  try {
+    const u = await authFetch('user', { metodo: 'GET', token });
+    if (u.ok && u.datos?.email) guardarSesion({ ...sesion, email: u.datos.email });
+  } catch { /* el correo se verá más tarde */ }
+  return tipo;
+}
+
 /* ---------- router ---------- */
 function router() {
   const [, ruta, id] = location.hash.slice(1).split('/');
+  if (ruta === 'acceso') return sesion ? (location.hash = '#/') : vistaAcceso();
+  if (!sesion) { modoAcceso = 'entrar'; location.hash = '#/acceso'; return; } // sin sesión solo se ve el acceso
+  if (ruta === 'clave') return vistaClaveNueva();
   if (ruta === 'paquete' && /^\d+$/.test(id)) return vistaDetalle(id);
   if (ruta === 'actividad') return vistaActividad();
   if (ruta === 'ajustes') return vistaAjustes();
@@ -528,8 +721,14 @@ function router() {
   if (ruta === 'editar' && /^\d+$/.test(id)) return vistaFormulario(id);
   return vistaListado();
 }
-window.addEventListener('hashchange', router);
-router();
+/** Rutea la dirección actual; si trae el token de un enlace del correo (también con la app ya abierta), lo recoge antes. */
+async function alCambiarLaDireccion() {
+  const tipo = await recogerTokenDeLaUrl();
+  if (tipo === 'recovery') { location.hash = '#/clave'; return; }
+  router();
+}
+window.addEventListener('hashchange', alCambiarLaDireccion);
+alCambiarLaDireccion();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});

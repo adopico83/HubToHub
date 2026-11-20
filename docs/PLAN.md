@@ -13,7 +13,7 @@ Objetivo: un panel único (móvil primero) que sigue por sí solo todos tus paqu
 - Pasar de CSV a SQLite o MySQL (misma capa DataHandler, solo cambia la persistencia).
 - Campos: `id`, `remitente`, `destinatario`, `peso`, `estado`, `fecha`, más `numero_seguimiento`, `paqueteria`, `direccion` (recibido / enviado).
 - Interfaz del mockup (escritorio y móvil) consumiendo la API. Instalable como PWA.
-- Login básico (**en curso**). Alta de paquetes a mano.
+- Login con cuentas (Supabase Auth): hecho; cada usuario ve solo sus paquetes. Alta de paquetes a mano.
 
 ## Fase 2 – Seguimiento automático
 - Un **conector por paquetería** con la misma interfaz: `detectar(numero)` y `consultar(numero)` devuelven un estado normalizado: `pendiente`, `en_reparto`, `listo_para_recoger`, `entregado`, `incidencia`.

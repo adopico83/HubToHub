@@ -19,8 +19,15 @@ npm test
 ```
 `npm run db:init` crea las tablas sin tocar datos; `npm run db:seed` añade los ejemplos si la tabla está vacía.
 
+## Cuentas y acceso
+Las cuentas las gestiona **Supabase Auth** (correo y contraseña). El navegador inicia sesión directamente con Supabase y envía el token de sesión (`Authorization: Bearer …`) en cada llamada; la API lo comprueba con Supabase (se recuerda 30 s) y **cada usuario solo ve y modifica sus propios paquetes**, su actividad y sus notificaciones. Sin sesión, la API responde `401` y la web lleva a la pantalla de acceso.
+
+- `GET /config` es la única ruta pública: da la URL del proyecto de Supabase y su clave *publishable* (pública por diseño). Se pueden cambiar con `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY`.
+- Cada paquete tiene `user_id` (el id del usuario en Supabase). Los paquetes creados antes de las cuentas quedan sin dueño y no se ven hasta asignarlos: `UPDATE paquetes SET user_id = '<id del usuario>' WHERE user_id IS NULL;` (el id está en Supabase → Authentication → Users). En local, `SEED_USER_ID=<id> npm run db:reset` asigna los ejemplos a esa cuenta.
+- Ajustes de Supabase necesarios: ver «Despliegue».
+
 ## API
-Siempre devuelve `{status, code, message, data}` (salvo `204`, que no lleva cuerpo).
+Siempre devuelve `{status, code, message, data}` (salvo `204`, que no lleva cuerpo). Todas las rutas, salvo `/config`, exigen sesión.
 
 | Método | Ruta | Código |
 | --- | --- | --- |
@@ -29,6 +36,7 @@ Siempre devuelve `{status, code, message, data}` (salvo `204`, que no lleva cuer
 | POST | `/paquetes` | 201 / 422 |
 | PUT | `/paquetes/{id}` (admite cambios parciales) | 200 / 404 / 422 |
 | DELETE | `/paquetes/{id}` | 204 / 404 |
+| GET | `/config` (pública) | 200 |
 | GET | `/eventos` (actividad reciente, `?limite=50`) | 200 |
 | GET | `/push` (clave pública de notificaciones) | 200 |
 | POST | `/push` (suscribir este dispositivo) | 201 / 422 / 503 |
@@ -38,7 +46,7 @@ Siempre devuelve `{status, code, message, data}` (salvo `204`, que no lleva cuer
 `GET /paquetes/{id}` incluye `eventos`: el historial de cambios de estado del paquete, del más antiguo al más reciente.
 Cada alta y cada cambio de `estado` guarda un evento; los avisos push se envían solo cuando el estado cambia.
 
-Otros: ruta desconocida 404, método no permitido 405, JSON mal formado 400.
+Otros: sin sesión 401, ruta desconocida 404, método no permitido 405, JSON mal formado 400. Un paquete de otro usuario responde 404, igual que uno que no existe.
 Estados: `pendiente`, `en_reparto`, `listo_para_recoger`, `entregado`, `incidencia`.
 
 ## Estructura
@@ -48,9 +56,12 @@ Estados: `pendiente`, `en_reparto`, `listo_para_recoger`, `entregado`, `incidenc
 - `docs/` plan, paleta, bocetos y logo
 
 ## Despliegue (Vercel + Supabase)
-1. Ejecuta `database/schema.sql` en el SQL Editor de Supabase. Si la base ya existía de antes, ejecuta en su lugar `database/migraciones/002_historial_y_push.sql`.
+1. Ejecuta `database/schema.sql` en el SQL Editor de Supabase. Si la base ya existía de antes, ejecuta en su lugar las migraciones de `database/migraciones/` que falten (`002` historial y push, `003` cuentas).
 2. En Vercel, importa el repo y añade la variable `DATABASE_URL` (cadena *pooler* de Supabase).
 3. Notificaciones push (opcional): `npm run vapid` genera las claves; añade `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (secreta) y `VAPID_SUBJECT` en Vercel y vuelve a desplegar. Después, en la app, ve a Ajustes → Activar notificaciones. En iPhone hay que instalar antes la app en la pantalla de inicio.
 4. Cada commit a `main` se publica en producción; el resto de ramas generan *previews*.
 
-La app aún **no tiene login**: no abras la URL pública con datos reales hasta añadirlo.
+5. **Cuentas (Supabase → Authentication):**
+   - *URL Configuration*: pon como **Site URL** la dirección de producción (por ejemplo `https://huntihub.vercel.app`) y añádela a **Redirect URLs**. Sin esto, los enlaces del correo (confirmar y recuperar contraseña) llevan a `localhost`.
+   - *Sign In / Providers → Email*: decide si exige **confirmar el correo** al registrarse. Con confirmación, el correo de Supabase por defecto tiene un límite de envíos muy bajo y puede caer en spam; para uso personal es más cómodo desactivarla. Si no quieres que se registre cualquiera, desactiva también el registro de usuarios nuevos tras crear tu cuenta.
+6. Cuando el login esté probado en producción, se puede desactivar la protección de Vercel (Settings → Deployment Protection).
