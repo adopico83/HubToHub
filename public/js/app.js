@@ -72,7 +72,6 @@ const esOscuro = () => document.documentElement.dataset.tema === 'oscuro';
 function aplicarTema() {
   const modo = guardado('tema', 'auto');
   const root = document.documentElement;
-  root.dataset.fondo = guardado('fondo', '0');
   root.dataset.tema = modo === 'oscuro' || (modo === 'auto' && prefiereOscuro()) ? 'oscuro' : 'claro';
   // La barra de estado del móvil toma el color de la cabecera.
   const color = getComputedStyle(root).getPropertyValue('--head-bg').trim();
@@ -121,6 +120,35 @@ function layout({ eyebrow, titulo, sub, accion, volver, contenido, tab = 'paquet
   window.scrollTo(0, 0);
 }
 
+/* ---------- Hubi, la mascota, y el resumen del listado ---------- */
+const CARAS = {
+  normal: '<circle cx="24" cy="36" r="2.9" fill="#2B2118"/><circle cx="40" cy="36" r="2.9" fill="#2B2118"/><circle cx="25" cy="35" r="1" fill="#fff"/><circle cx="41" cy="35" r="1" fill="#fff"/><path d="M27 43Q32 48 37 43" stroke="#2B2118" stroke-width="2.2" stroke-linecap="round" fill="none"/>',
+  feliz: '<path d="M20.5 37Q24 32.5 27.5 37M36.5 37Q40 32.5 43.5 37" stroke="#2B2118" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M25.5 41.5Q32 51 38.5 41.5Z" fill="#2B2118"/>',
+  preocupado: '<circle cx="24" cy="37" r="2.9" fill="#2B2118"/><circle cx="40" cy="37" r="2.9" fill="#2B2118"/><circle cx="25" cy="36" r="1" fill="#fff"/><circle cx="41" cy="36" r="1" fill="#fff"/><path d="M19.5 33.5L27.5 30.5M44.5 33.5L36.5 30.5" stroke="#2B2118" stroke-width="2.1" stroke-linecap="round"/><path d="M27.5 46.5Q32 42.5 36.5 46.5" stroke="#2B2118" stroke-width="2.2" stroke-linecap="round" fill="none"/>',
+};
+const hubi = (animo = 'normal') => `<svg viewBox="0 0 64 64" role="img" aria-label="Hubi, la mascota de HubToHub">
+  <ellipse cx="32" cy="60.5" rx="17" ry="2.6" fill="#000" opacity=".28"/>
+  <rect x="20" y="49" width="8" height="9" rx="4" fill="#7A4A2B"/><rect x="36" y="49" width="8" height="9" rx="4" fill="#7A4A2B"/>
+  <rect x="4" y="30" width="9" height="6.5" rx="3.2" fill="#D9954F"/><rect x="51" y="30" width="9" height="6.5" rx="3.2" fill="#D9954F"/>
+  <rect x="11" y="21" width="42" height="31" rx="7" fill="#EDBB74"/>
+  <rect x="8" y="10" width="48" height="13" rx="5" fill="#D9954F"/><rect x="26" y="10" width="12" height="13" fill="#E8663A"/>
+  <circle cx="18.5" cy="42.5" r="3.2" fill="#E8663A" opacity=".4"/><circle cx="45.5" cy="42.5" r="3.2" fill="#E8663A" opacity=".4"/>
+  ${CARAS[animo] || CARAS.normal}</svg>`;
+
+/** Frase para la cabecera y ánimo de Hubi según lo que hay abierto. */
+function resumenListado(paquetes) {
+  const n = (e) => paquetes.filter((p) => p.estado === e).length;
+  const partes = [];
+  if (n('en_reparto')) partes.push(`${n('en_reparto')} en reparto`);
+  if (n('listo_para_recoger')) partes.push(`${n('listo_para_recoger')} para recoger`);
+  if (n('incidencia')) partes.push(`${n('incidencia')} con incidencia`);
+  if (n('pendiente')) partes.push(`${n('pendiente')} ${n('pendiente') === 1 ? 'pendiente' : 'pendientes'}`);
+  const lista = partes.length < 2 ? partes.join('') : `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`;
+  const texto = partes.length ? `Tienes ${lista}.` : paquetes.length ? 'Todo entregado, no queda nada pendiente.' : 'Aún no tienes paquetes. Añade el primero.';
+  const animo = n('incidencia') ? 'preocupado' : partes.length || !paquetes.length ? 'normal' : 'feliz';
+  return { texto, animo };
+}
+
 /* ---------- listado ---------- */
 async function vistaListado() {
   layout({
@@ -136,6 +164,9 @@ async function vistaListado() {
     return;
   }
   const main = $app.querySelector('main');
+  const resumen = resumenListado(state.paquetes);
+  $app.querySelector('.hero .sub').textContent = resumen.texto;
+  $app.querySelector('.hero').insertAdjacentHTML('beforeend', `<div class="mascota">${hubi(resumen.animo)}</div>`);
   const cuenta = (e) => state.paquetes.filter((p) => p.estado === e).length;
   const stats = [
     ['', 'Total', state.paquetes.length],
@@ -402,8 +433,6 @@ function vistaAjustes() {
       <section class="glass card" aria-label="Apariencia"><h2>${ICON.sol}Apariencia</h2>
         <p class="muted">Elige el tema de la app.</p>
         <div class="seg" data-ajuste="tema">${[['auto', 'Automático'], ['claro', 'Claro'], ['oscuro', 'Oscuro']].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${guardado('tema', 'auto') === k}">${v}</button>`).join('')}</div>
-        <h3>Fondo (para probar)</h3>
-        <div class="seg" data-ajuste="fondo">${[['0', 'Liso'], ['1', '1 · Ruta'], ['2', '2 · Correo aéreo'], ['3', '3 · Código']].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${guardado('fondo', '0') === k}">${v}</button>`).join('')}</div>
       </section>
       <section class="glass card" aria-label="Instalación"><h2>${ICON.caja}Instalar la app</h2>
         <p class="muted">${instalada() ? 'Ya la estás usando como app instalada.' : 'Instálala desde el menú del navegador («Instalar app» o «Añadir a pantalla de inicio») para abrirla como una app y recibir avisos también en el móvil.'}</p>
