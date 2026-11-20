@@ -154,9 +154,9 @@ async function vistaListado() {
   const cuenta = (e) => state.paquetes.filter((p) => p.estado === e).length;
   const stats = [
     ['', 'Total', state.paquetes.length],
+    ['pendiente', 'Pendientes', cuenta('pendiente')],
     ['en_reparto', 'En reparto', cuenta('en_reparto')],
     ['listo_para_recoger', 'Para recoger', cuenta('listo_para_recoger')],
-    ['pendiente', 'Pendientes', cuenta('pendiente')],
     ['entregado', 'Entregados', cuenta('entregado')],
     ['incidencia', 'Incidencias', cuenta('incidencia')],
   ];
@@ -212,11 +212,9 @@ function filaHTML(p, i) {
 /* ---------- seguimiento: la línea avanza según la etapa de la entrega ---------- */
 const CORTO = { pendiente: 'Pendiente', en_reparto: 'En reparto', listo_para_recoger: 'Para recoger', entregado: 'Entregado', incidencia: 'Incidencia' };
 
-/** Etapas del recorrido. "Para recoger" solo aparece si el paquete pasó por ahí. */
-function etapasDe(p, eventos) {
-  const recogida = p.estado === 'listo_para_recoger' || eventos.some((e) => e.estado === 'listo_para_recoger');
-  return ['pendiente', 'en_reparto', ...(recogida ? ['listo_para_recoger'] : []), 'entregado'];
-}
+/** Etapas del recorrido: son las mismas en todos los paquetes, sea cual sea su estado. */
+const ETAPAS = ['pendiente', 'en_reparto', 'listo_para_recoger', 'entregado'];
+const etapasDe = () => ETAPAS;
 
 /** Índice de la etapa en que está el paquete. Una incidencia se queda en la etapa donde ocurrió. */
 function etapaActual(p, eventos, etapas) {
