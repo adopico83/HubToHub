@@ -1,7 +1,7 @@
 // Service worker mínimo: guarda la "cáscara" de la app para poder instalarla y abrirla offline.
 // La API (/paquetes) siempre va a la red: los datos nunca se sirven de caché.
-const CACHE = 'hubtohub-shell-v13';
-const SHELL = ['/', '/css/app.css', '/js/app.js', '/img/logo-icono.svg', '/img/logo-marca.svg', '/manifest.json'];
+const CACHE = 'hubtohub-shell-v15';
+const SHELL = ['/', '/css/app.css', '/js/app.js', '/img/logo-icono.svg', '/img/logo-marca.svg', '/img/hubi-feliz.webp', '/manifest.json'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
