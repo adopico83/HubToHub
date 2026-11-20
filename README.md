@@ -62,6 +62,6 @@ Estados: `pendiente`, `en_reparto`, `listo_para_recoger`, `entregado`, `incidenc
 4. Cada commit a `main` se publica en producción; el resto de ramas generan *previews*.
 
 5. **Cuentas (Supabase → Authentication):**
-   - *URL Configuration*: pon como **Site URL** la dirección de producción (por ejemplo `https://huntihub.vercel.app`) y añádela a **Redirect URLs**. Sin esto, los enlaces del correo (confirmar y recuperar contraseña) llevan a `localhost`.
-   - *Sign In / Providers → Email*: decide si exige **confirmar el correo** al registrarse. Con confirmación, el correo de Supabase por defecto tiene un límite de envíos muy bajo y puede caer en spam; para uso personal es más cómodo desactivarla. Si no quieres que se registre cualquiera, desactiva también el registro de usuarios nuevos tras crear tu cuenta.
+   - *URL Configuration*: pon como **Site URL** la dirección de producción (por ejemplo `https://hubtohub-es.vercel.app`) y añádela a **Redirect URLs**. Sin esto, los enlaces del correo (confirmar y recuperar contraseña) llevan a `localhost`.
+   - *Sign In / Providers → Email*: decide si exige **confirmar el correo** al registrarse. Con confirmación, el correo de Supabase por defecto tiene un límite de envíos muy bajo y puede caer en spam; para uso personal es más cómodo desactivarla. Si no quieres que se registre cualquiera, desactiva también el registro de usuarios nuevos (*Allow new users to sign up*) tras crear tu cuenta.
 6. Cuando el login esté probado en producción, se puede desactivar la protección de Vercel (Settings → Deployment Protection).
