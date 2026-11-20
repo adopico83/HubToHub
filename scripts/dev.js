@@ -12,6 +12,7 @@ const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 
 const RUTAS = [
   [/^\/paquetes\/?$/, (await import('../api/paquetes/index.js')).default],
   [/^\/paquetes\/([^/]+)\/?$/, (await import('../api/paquetes/[id].js')).default, 'id'],
+  [/^\/config\/?$/, (await import('../api/config.js')).default],
   [/^\/eventos\/?$/, (await import('../api/eventos.js')).default],
   [/^\/push\/?$/, (await import('../api/push/index.js')).default],
   [/^\/push\/prueba\/?$/, (await import('../api/push/prueba.js')).default],

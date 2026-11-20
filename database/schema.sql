@@ -10,11 +10,14 @@ CREATE TABLE IF NOT EXISTS paquetes (
   numero_seguimiento TEXT,
   paqueteria         TEXT,
   direccion          TEXT NOT NULL DEFAULT 'recibido' CHECK (direccion IN ('recibido','enviado')),
-  created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- Dueño del paquete: id del usuario en Supabase Auth (auth.users.id). La API filtra siempre por él.
+  user_id            UUID
 );
 
 CREATE INDEX IF NOT EXISTS paquetes_estado_idx ON paquetes (estado);
 CREATE INDEX IF NOT EXISTS paquetes_fecha_idx ON paquetes (fecha DESC);
+CREATE INDEX IF NOT EXISTS paquetes_usuario_idx ON paquetes (user_id, fecha DESC);
 
 -- Historial de cambios de estado
 CREATE TABLE IF NOT EXISTS eventos (
@@ -32,8 +35,10 @@ CREATE TABLE IF NOT EXISTS push_suscripciones (
   endpoint   TEXT PRIMARY KEY,
   p256dh     TEXT NOT NULL,
   auth       TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  user_id    UUID
 );
+CREATE INDEX IF NOT EXISTS push_usuario_idx ON push_suscripciones (user_id);
 
 -- Seguridad: la app accede solo desde el servidor (rol de la cadena de conexión).
 -- Activar RLS sin políticas impide que la API pública de Supabase (anon key) lea o escriba estas tablas.

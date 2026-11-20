@@ -19,6 +19,11 @@ try {
     else {
       await pool.query(await leer('seed.sql'));
       console.log('Datos de ejemplo cargados.');
+      // Los ejemplos nacen sin dueño; con SEED_USER_ID (id de un usuario de Supabase Auth) se asignan a esa cuenta.
+      if (process.env.SEED_USER_ID) {
+        const r = await pool.query('UPDATE paquetes SET user_id = $1 WHERE user_id IS NULL', [process.env.SEED_USER_ID]);
+        console.log(`${r.rowCount} paquetes asignados a ${process.env.SEED_USER_ID}.`);
+      }
     }
   }
   await pool.end();
