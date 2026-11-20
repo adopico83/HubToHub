@@ -267,5 +267,5 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 /* Hubi (prueba): asoma por el borde inferior de la cabecera del listado */
 .hubi{position:absolute;z-index:2;right:12px;bottom:-14px;height:108px;width:auto;pointer-events:none}
 @media (max-width:759px){.hero.compacto .sub{max-width:calc(100vw - 113px)}}
-@media (min-width:760px){.hubi{right:calc(max(32px,(100% - 1120px)/2) + 215px);bottom:-18px;height:190px}}
+@media (min-width:760px){.hubi{left:50%;right:auto;transform:translateX(-50%);bottom:-20px;height:200px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
