@@ -18,6 +18,15 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const fechaES = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
 const pesoES = (p) => (p == null ? '—' : Number(p).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 3 }));
 const iniciales = (n) => n.split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase();
+/** «hace 3 min», «hace 2 h», «hace 1 día» */
+function hace(iso) {
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (m < 1) return 'ahora mismo';
+  if (m < 60) return `hace ${m} min`;
+  if (m < 1440) return `hace ${Math.round(m / 60)} h`;
+  const d = Math.round(m / 1440);
+  return `hace ${d} ${d === 1 ? 'día' : 'días'}`;
+}
 const hora = (iso) => new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 const fechaHoraES = (iso) => new Date(iso).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' ·');
 const diaClave = (iso) => new Date(iso).toLocaleDateString('sv-SE'); // AAAA-MM-DD en hora local
@@ -383,10 +392,14 @@ function seguimientoHTML(p, eventos) {
 }
 
 const historialHTML = (eventos) => eventos.length
-  ? `<ol class="hist">${[...eventos].reverse().map((e) => `<li class="e-${e.estado}">
+  ? `<ol class="hist">${[...eventos].reverse().map((e) => {
+    // El alta del paquete en la app no es un estado: se muestra aparte para que no parezca que vuelve a estar pendiente.
+    const alta = e.detalle === 'Paquete registrado';
+    return `<li class="e-${e.estado}${alta ? ' reg' : ''}">
       <span class="d"></span>
-      <div><b>${ESTADOS[e.estado] || esc(e.estado)}</b>${e.detalle ? `<span>${esc(e.detalle)}</span>` : ''}</div>
-      <time datetime="${esc(e.ocurrido_en)}">${esc(fechaHoraES(e.ocurrido_en))}</time></li>`).join('')}</ol>`
+      <div><b>${alta ? 'Añadido a HubToHub' : ESTADOS[e.estado] || esc(e.estado)}</b>${e.detalle && !alta ? `<span>${esc(e.detalle)}</span>` : ''}</div>
+      <time datetime="${esc(e.ocurrido_en)}">${esc(fechaHoraES(e.ocurrido_en))}</time></li>`;
+  }).join('')}</ol>`
   : '<p class="muted">Todavía no hay movimientos.</p>';
 
 /* ---------- detalle ---------- */
@@ -397,6 +410,10 @@ async function vistaDetalle(id) {
   if (r.code !== 200) return error(r.message);
   const p = r.data;
   const eventos = p.eventos || [];
+  const cfg = await cargarConfig().catch(() => ({}));
+  const auto = cfg.seguimiento && p.numero_seguimiento
+    ? `<div class="auto"><p class="muted">${p.seguimiento_auto ? `Seguimiento automático activo · ${p.consultado_en ? 'consultado ' + hace(p.consultado_en) : 'aún sin consultar'}` : 'Seguimiento automático desactivado'}</p>${p.seguimiento_auto ? '<button class="btn ghost-d" id="act" type="button">Actualizar ahora</button>' : ''}</div>`
+    : '';
 
   layout({
     eyebrow: p.direccion === 'enviado' ? 'Envío' : 'Recepción', titulo: `Paquete #${p.id}`, sub: badgeText(p), volver: [ultimaLista, 'Volver'], mascota: `estado:${p.estado}`,
@@ -416,6 +433,7 @@ async function vistaDetalle(id) {
             <div><dt>Paquetería</dt><dd>${esc(p.paqueteria || '—')}</dd></div>
             <div><dt>Nº seguimiento</dt><dd>${esc(p.numero_seguimiento || '—')}</dd></div>
           </dl>
+          ${auto}
           <div class="field quick"><label for="cambiar">Cambiar estado</label>
             <select id="cambiar">${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${p.estado === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
           <div class="actions">
@@ -429,6 +447,17 @@ async function vistaDetalle(id) {
   // Anima la línea desde el principio hasta su posición.
   requestAnimationFrame(() => requestAnimationFrame(() => $app.querySelector('.track')?.classList.add('go')));
 
+  document.getElementById('act')?.addEventListener('click', async (ev) => {
+    ev.target.disabled = true;
+    ev.target.textContent = 'Consultando…';
+    try {
+      const res = await api('/' + p.id, { method: 'POST' });
+      if (res.code === 200) { toast(res.data?.encontrado === false ? 'La paquetería aún no tiene información' : res.message); return vistaDetalle(id); }
+      toast(res.message || 'No se pudo consultar', true);
+    } catch { toast('No se pudo conectar con la API', true); }
+    ev.target.disabled = false;
+    ev.target.textContent = 'Actualizar ahora';
+  });
   document.getElementById('cambiar').addEventListener('change', async (ev) => {
     ev.target.disabled = true;
     try {
@@ -567,6 +596,7 @@ function vistaAjustes() {
 
 /* ---------- alta / edición ---------- */
 async function vistaFormulario(id) {
+  const cfg = await cargarConfig().catch(() => ({}));
   let p = { remitente: '', destinatario: '', peso: '', estado: 'pendiente', fecha: new Date().toISOString().slice(0, 10), numero_seguimiento: '', paqueteria: '', direccion: 'recibido' };
   if (id) {
     try {
@@ -593,6 +623,7 @@ async function vistaFormulario(id) {
         ${campo('fecha', 'Fecha', 'date')}</div>
         <div class="two">${campo('paqueteria', 'Paquetería (opcional)', 'text', 'placeholder="Correos, GLS, InPost…" maxlength="60"')}
         ${campo('numero_seguimiento', 'Nº de seguimiento (opcional)', 'text', 'maxlength="60"')}</div>
+        ${cfg.seguimiento ? `<label class="check"><input type="checkbox" name="seguimiento_auto" ${p.seguimiento_auto === false ? '' : 'checked'}><span>Consultar el seguimiento automáticamente<small>Con número de seguimiento, la app mira sola la paquetería y actualiza el estado.</small></span></label>` : ''}
         <div class="actions"><button class="btn blue" type="submit">${id ? 'Guardar cambios' : 'Crear paquete'}</button></div>
       </form></section>`,
   });
@@ -602,6 +633,7 @@ async function vistaFormulario(id) {
     ev.preventDefault();
     form.querySelectorAll('.field').forEach((f) => { f.classList.remove('bad'); f.querySelector('.err').textContent = ''; });
     const body = Object.fromEntries(new FormData(form));
+    if (form.seguimiento_auto) body.seguimiento_auto = form.seguimiento_auto.checked; // una casilla sin marcar no viaja en el formulario
     try {
       const r = await api(id ? '/' + id : '', { method: id ? 'PUT' : 'POST', body });
       if (r.code === 422) {

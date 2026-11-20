@@ -16,6 +16,8 @@ Objetivo: un panel único (móvil primero) que sigue por sí solo todos tus paqu
 - Login con cuentas (Supabase Auth): hecho; cada usuario ve solo sus paquetes. Alta de paquetes a mano.
 
 ## Fase 2 – Seguimiento automático
+> Estado: **en curso**. Hecho: motor (eventos sin duplicar, estado, avisos, cambios manuales), tarea periódica protegida, botón «Actualizar ahora», casilla por paquete y proveedor simulado. Pendiente: adaptador del proveedor real (TrackingMore, con la clave de API y envíos reales), afinar la lectura de «para recoger» con textos reales y programar la tarea.
+> Paqueterías de uso real: Correos Express, Amazon, GLS, MRW, SEUR, DHL Express, Nacex, InPost y CTT (cobertura del proveedor **por verificar**). Volumen: unos 20 paquetes al mes; consulta cada 15 minutos.
 - Un **conector por paquetería** con la misma interfaz: `detectar(numero)` y `consultar(numero)` devuelven un estado normalizado: `pendiente`, `en_reparto`, `listo_para_recoger`, `entregado`, `incidencia`.
 - Empezar con 2–3 paqueterías que uses de verdad (por ejemplo Correos, GLS, InPost).
 - Una tarea programada (cron) consulta cada X minutos los paquetes abiertos y guarda cada cambio en una tabla `eventos`.
