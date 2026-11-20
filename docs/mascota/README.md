@@ -15,6 +15,11 @@ Cada vez que se abre «Paquetes» sale una pose distinta, nunca la misma dos vec
 
 Las cinco comparten escala y línea de los pies (mismo recorte vertical), así que al cambiar de una a otra no «saltan». Para añadir una pose: recórtala con la misma franja, guárdala en `public/img/hubi/`, añádela a `POSES_HUBI` en `public/js/app.js` (con su ancho y alto) y al `SHELL` de `public/sw.js`.
 
+## Detalle de un paquete en reparto
+| Archivo | Pose | Dónde |
+| --- | --- | --- |
+| `hubi-bici.webp` | Pedalea con una caja en la cesta y saluda | Cabecera del detalle, solo si el estado es «en reparto» (`public/img/hubi/`) |
+
 ## Reservadas para estados (aún sin usar)
 | Archivo | Expresión | Uso previsto |
 | --- | --- | --- |
