@@ -62,6 +62,18 @@ const recogidaLinea = (p) => (p.estado === 'listo_para_recoger' && (p.punto_reco
 /** Los que caducan antes, primero; los que no tienen fecha, al final. */
 const porCaducidad = (a, b) => (a.recoger_hasta || '9999-99-99').localeCompare(b.recoger_hasta || '9999-99-99') || a.id - b.id;
 
+/* ---------- reclamación de una incidencia ---------- */
+const GESTIONES = { abierta: 'Abierta', respondida: 'Respondida', resuelta: 'Resuelta' };
+const DIAS_SIN_RESPUESTA = 3; // pasado este tiempo con la reclamación abierta, se avisa de que conviene insistir
+const diasDesde = (iso) => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+/** Reclamación pendiente de respuesta (abierta o respondida), con el aviso de si lleva días sin contestación. */
+function gestionPendiente(p) {
+  if (p.gestion !== 'abierta' && p.gestion !== 'respondida') return null;
+  const dias = p.gestion_en ? diasDesde(p.gestion_en) : 0;
+  return { dias, sinRespuesta: p.gestion === 'abierta' && dias >= DIAS_SIN_RESPUESTA, texto: `Reclamación ${p.gestion}${p.gestion_en ? ' · ' + hace(p.gestion_en) : ''}` };
+}
+const gestionLinea = (p) => { const g = gestionPendiente(p); return g ? `<span class="recogida-linea"><span class="cad cad-${g.sinRespuesta ? 'urgente' : 'pronto'}">${esc(g.texto)}${g.sinRespuesta ? ' · sin respuesta' : ''}</span></span>` : ''; };
+
 const badge = (e) => `<span class="badge e-${e}">${ESTADOS[e] || esc(e)}</span>`;
 const ICON = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
@@ -381,7 +393,7 @@ function filaHTML(p, i) {
     <div class="avatar" style="--c:${AVATARES[p.id % AVATARES.length]}" aria-hidden="true">${esc(iniciales(nombre))}</div>
     <div class="who">${esc(nombre)}<small>#${p.id}</small></div>
     ${badge(p.estado)}
-    <div class="meta">${p.direccion === 'enviado' ? 'Enviado' : 'Recibido'} · ${fechaES(p.fecha)}${p.paqueteria ? ' · ' + esc(p.paqueteria) : ''}${recogidaLinea(p)}</div>
+    <div class="meta">${p.direccion === 'enviado' ? 'Enviado' : 'Recibido'} · ${fechaES(p.fecha)}${p.paqueteria ? ' · ' + esc(p.paqueteria) : ''}${recogidaLinea(p)}${gestionLinea(p)}</div>
     <div class="extra peso">${pesoES(p.peso)} kg</div>
     <div class="extra seg">${esc(p.numero_seguimiento || 'Sin seguimiento')}</div>
   </a></li>`;
@@ -406,6 +418,35 @@ function etapaActual(p, eventos, etapas) {
  * Con el seguimiento automático (fase 2) devolverá, por ejemplo, las paradas que faltan para llegar.
  */
 const avanceEnEtapa = () => 0;
+
+/** Tarjeta «Resolver incidencia»: contacto con la paquetería, mensaje de reclamación y seguimiento de la gestión. */
+function incidenciaHTML(p, eventos) {
+  if (p.estado !== 'incidencia' && !p.gestion) return '';
+  const paq = paqueteriaDe(p.paqueteria);
+  const ultimo = [...eventos].reverse().find((e) => e.estado === 'incidencia' && e.detalle);
+  const g = gestionPendiente(p);
+  const nombre = paq?.nombre || p.paqueteria || 'la paquetería';
+  const enlaces = paq
+    ? paq.enlaces.map((e) => `<a class="btn ghost-d" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">${esc(e.etiqueta)}</a>`).join('')
+    : '';
+  return `<section class="glass card gestion-card" aria-label="Resolver incidencia"><h2>${ICON.aviso}Resolver incidencia</h2>
+    <h3>1 · Contacta con ${esc(nombre)}</h3>
+    ${paq ? `<p class="muted">Enlaces oficiales (comprobados el ${fechaES(paq.verificado)}). Ten a mano el número de seguimiento.</p>`
+          : `<p class="muted">Aún no tengo comprobados los datos de contacto de ${p.paqueteria ? '«' + esc(p.paqueteria) + '»' : 'esta paquetería'}. Búscalos en su web oficial y ten a mano el número de seguimiento.</p>`}
+    <div class="actions">${enlaces}${p.numero_seguimiento ? '<button class="btn ghost-d" id="copiar-num" type="button">Copiar nº de seguimiento</button>' : ''}</div>
+    <h3>2 · Mensaje de reclamación</h3>
+    <div class="field"><label for="motivo">Qué ha pasado</label>
+      <input id="motivo" type="text" maxlength="200" value="${esc(ultimo?.detalle || '')}" placeholder="${esc(MOTIVO_POR_DEFECTO)}"></div>
+    <textarea id="mensaje" class="mensaje" rows="13" readonly aria-label="Mensaje de reclamación">${esc(mensajeReclamacion(p, ultimo?.detalle))}</textarea>
+    <div class="actions"><button class="btn blue" id="copiar-msg" type="button">Copiar mensaje</button></div>
+    <h3>3 · Estado de la gestión</h3>
+    <div class="seg" id="gestion" role="group" aria-label="Estado de la reclamación">
+      ${[['', 'Sin reclamar'], ...Object.entries(GESTIONES)].map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${(p.gestion || '') === k}">${v}</button>`).join('')}
+    </div>
+    ${g ? `<p class="aviso ${g.sinRespuesta ? 'mal' : 'bien'}">${esc(g.texto)}${g.sinRespuesta ? `: llevas ${g.dias} días sin respuesta. Conviene insistir por el mismo canal o escalar la reclamación.` : '.'}</p>` : ''}
+    ${p.gestion === 'resuelta' ? '<p class="aviso bien">Reclamación resuelta.</p>' : ''}
+  </section>`;
+}
 
 /** Tarjeta «Recogida»: dónde, hasta cuándo y el PIN (oculto hasta que se pide verlo). Solo con el paquete listo para recoger. */
 function recogidaHTML(p, cfg) {
@@ -481,6 +522,7 @@ async function vistaDetalle(id) {
     eyebrow: p.direccion === 'enviado' ? 'Envío' : 'Recepción', titulo: `Paquete #${p.id}`, sub: badgeText(p), volver: [ultimaLista, 'Volver'], mascota: `estado:${p.estado}`,
     contenido: `
       <section class="glass card" aria-label="Seguimiento"><h2>Seguimiento</h2>${seguimientoHTML(p, eventos)}</section>
+      ${incidenciaHTML(p, eventos)}
       ${recogidaHTML(p, cfg)}
       <div class="grid2">
         <section class="glass card" aria-label="Datos">
@@ -536,6 +578,23 @@ async function vistaDetalle(id) {
       try { await navigator.clipboard.writeText(p.pin); toast('PIN copiado'); } catch { toast('No se pudo copiar: pulsa «Mostrar»', true); }
     });
   }
+  // Resolver incidencia: copiar, mensaje con el motivo escrito y estado de la gestión.
+  const copiar = async (texto, aviso) => { try { await navigator.clipboard.writeText(texto); toast(aviso); } catch { toast('No se pudo copiar', true); } };
+  document.getElementById('copiar-num')?.addEventListener('click', () => copiar(p.numero_seguimiento, 'Nº de seguimiento copiado'));
+  const msg = document.getElementById('mensaje');
+  document.getElementById('motivo')?.addEventListener('input', (e) => { msg.value = mensajeReclamacion(p, e.target.value); });
+  document.getElementById('copiar-msg')?.addEventListener('click', () => copiar(msg.value, 'Mensaje copiado'));
+  document.getElementById('gestion')?.addEventListener('click', async (ev) => {
+    const b = ev.target.closest('button');
+    if (!b || b.getAttribute('aria-pressed') === 'true') return;
+    $app.querySelectorAll('#gestion button').forEach((x) => { x.disabled = true; });
+    try {
+      const res = await api('/' + p.id, { method: 'PUT', body: { gestion: b.dataset.v } });
+      if (res.code !== 200) { toast(res.message, true); return vistaDetalle(id); }
+      toast(b.dataset.v ? `Reclamación: ${GESTIONES[b.dataset.v].toLowerCase()}` : 'Reclamación quitada');
+      vistaDetalle(id);
+    } catch { toast('No se pudo conectar con la API', true); vistaDetalle(id); }
+  });
   document.getElementById('recogido')?.addEventListener('click', async (ev) => {
     ev.currentTarget.disabled = true;
     try {

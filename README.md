@@ -42,6 +42,10 @@ Un paquete `listo_para_recoger` guarda **dónde** recogerlo (`punto_recogida`), 
 - **El PIN va cifrado** (AES-256-GCM, `lib/pin.js`) con la clave `PIN_CLAVE` (`npm run pin:clave` la genera). Nunca sale en los listados ni en las notificaciones: solo en `GET /paquetes/{id}`, a su dueño. Al marcar el paquete como entregado (a mano o por el seguimiento) se borra el PIN y la fecha límite. Sin `PIN_CLAVE` el servidor responde 503 al intentar guardar un PIN; el resto funciona.
 - En la API: `punto_recogida` (texto, hasta 120), `recoger_hasta` (`AAAA-MM-DD`) y `pin` (3 a 24 caracteres: letras, números, espacios o guiones; `""` lo borra; si no se envía, no cambia). Las respuestas llevan `tiene_pin`.
 
+## Resolver una incidencia
+Un paquete en estado `incidencia` (o con una reclamación ya iniciada) muestra la tarjeta «Resolver incidencia»: enlaces oficiales de la paquetería, copiar el nº de seguimiento, un mensaje de reclamación listo para copiar (con el motivo editable) y el estado de la gestión: `gestion` = `abierta`, `respondida` o `resuelta` (vacío = sin reclamar). Una reclamación abierta durante 3 días o más se marca «sin respuesta» en el detalle y en el listado. `gestion_en` guarda cuándo cambió por última vez.
+- Los datos de contacto están en `public/js/paqueterias.js` y **solo incluyen lo comprobado en la web oficial** de cada paquetería (hoy Correos, MRW y Amazon). Para las demás se avisa de que no están comprobados. Antes de añadir una, verifica sus enlaces en su web.
+
 ## API
 Siempre devuelve `{status, code, message, data}` (salvo `204`, que no lleva cuerpo). Todas las rutas, salvo `/config`, exigen sesión.
 
@@ -73,7 +77,7 @@ Estados: `pendiente`, `en_reparto`, `listo_para_recoger`, `entregado`, `incidenc
 - `docs/` plan, paleta, bocetos y logo
 
 ## Despliegue (Vercel + Supabase)
-1. Ejecuta `database/schema.sql` en el SQL Editor de Supabase. Si la base ya existía de antes, ejecuta en su lugar las migraciones de `database/migraciones/` que falten (`002` historial y push, `003` cuentas, `004` seguimiento automático, `005` recogida).
+1. Ejecuta `database/schema.sql` en el SQL Editor de Supabase. Si la base ya existía de antes, ejecuta en su lugar las migraciones de `database/migraciones/` que falten (`002` historial y push, `003` cuentas, `004` seguimiento automático, `005` recogida, `006` reclamación de incidencias).
 2. En Vercel, importa el repo y añade la variable `DATABASE_URL` (cadena *pooler* de Supabase).
 2 bis. PIN de recogida: `npm run pin:clave` y añade `PIN_CLAVE` en Vercel (secreta; no la pierdas: los PIN guardados dejarían de leerse).
 3. Notificaciones push (opcional): `npm run vapid` genera las claves; añade `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (secreta) y `VAPID_SUBJECT` en Vercel y vuelve a desplegar. Después, en la app, ve a Ajustes → Activar notificaciones. En iPhone hay que instalar antes la app en la pantalla de inicio.

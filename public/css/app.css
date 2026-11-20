@@ -361,3 +361,14 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .recogida-campos{margin:6px 0 4px;padding:14px 16px 4px;border:1px dashed color-mix(in srgb,var(--c-listo_para_recoger) 55%,var(--line));border-radius:12px;display:grid;gap:14px}
 .recogida-campos h3{display:flex;align-items:center;gap:8px;margin:0;font:700 15px var(--f-body)}
 .recogida-campos h3 svg{width:18px;height:18px;color:var(--c-listo_para_recoger)}
+
+/* Resolver incidencia */
+.gestion-card{margin-top:16px}
+.gestion-card h2{display:flex;align-items:center;gap:8px}
+.gestion-card h2 svg{width:22px;height:22px;color:var(--c-incidencia)}
+.gestion-card h3{margin:22px 0 6px;font:700 15px var(--f-body)}
+.gestion-card h3:first-of-type{margin-top:4px}
+.gestion-card .actions{margin-top:12px}
+.gestion-card .actions .btn{min-height:44px}
+.mensaje{width:100%;margin-top:4px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:400 14px/1.5 var(--f-body);resize:vertical}
+.gestion-card .aviso{margin-top:12px}
